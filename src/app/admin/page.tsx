@@ -21,6 +21,7 @@ import { Website } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 import { SearchBar } from "@/components/SearchBar";
+import { uploadImage } from "@/lib/upload";
 
 const emptyForm: Omit<Website, "id" | "createdAt" | "updatedAt"> = {
   title: "",
@@ -436,22 +437,29 @@ export default function AdminPage() {
 
                   <div className="sm:col-span-2">
                     <label className="block text-sm text-muted mb-1">
-                      Thumbnail URL (Cloudinary or any image URL)
+                      Thumbnail (upload or paste URL)
                     </label>
                     <div className="flex gap-2">
                       <input
                         value={form.thumbnail}
                         onChange={(e) => setForm({ ...form, thumbnail: e.target.value })}
                         className="flex-1 px-3 py-2.5 rounded-lg bg-background border border-border outline-none focus:border-primary"
+                        placeholder="https://... or upload →"
                       />
-                      {/* Placeholder for future Cloudinary upload widget */}
-                      <button
-                        type="button"
-                        className="btn-outline text-sm py-2 px-3"
-                        title="Paste a Cloudinary URL for now. Full upload widget can be added later."
-                      >
+                      <label className="btn-outline text-sm py-2 px-3 cursor-pointer">
                         <Upload className="w-4 h-4" />
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const { url } = await uploadImage(file, "nexus265/thumbnails");
+                            setForm((prev) => ({ ...prev, thumbnail: url }));
+                          }}
+                        />
+                      </label>
                     </div>
                     {form.thumbnail && (
                       <div className="mt-2 relative w-full h-32 rounded-lg overflow-hidden bg-border">

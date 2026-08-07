@@ -16,7 +16,8 @@ import {
   Image as ImageIcon,
   Trash2,
 } from "lucide-react";
-import { useSettings, fileToDataUrl } from "@/lib/settings";
+import { useSettings } from "@/lib/settings";
+import { uploadImage } from "@/lib/upload";
 import { SiteSettings, defaultSettings } from "@/types";
 
 export default function AdminSettingsPage() {
@@ -47,6 +48,8 @@ export default function AdminSettingsPage() {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const [uploading, setUploading] = useState(false);
+
   const handleFile = async (
     e: React.ChangeEvent<HTMLInputElement>,
     field: "logo" | "heroImage"
@@ -59,14 +62,23 @@ export default function AdminSettingsPage() {
       alert("Please upload PNG, JPG, JPEG, GIF or WebP");
       return;
     }
-    // Limit ~2MB for localStorage safety
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image should be under 2MB for now. Compress it or use a URL.");
+    if (file.size > 8 * 1024 * 1024) {
+      alert("Image should be under 8MB.");
       return;
     }
 
-    const dataUrl = await fileToDataUrl(file);
-    setForm((prev) => ({ ...prev, [field]: dataUrl }));
+    setUploading(true);
+    try {
+      const { url, via } = await uploadImage(file, `nexus265/${field}`);
+      setForm((prev) => ({ ...prev, [field]: url }));
+      if (via === "local") {
+        console.info("Cloudinary not configured — saved as local data URL");
+      }
+    } catch {
+      alert("Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   if (!authorized) {
@@ -142,10 +154,11 @@ export default function AdminSettingsPage() {
                 <button
                   type="button"
                   onClick={() => logoInputRef.current?.click()}
-                  className="btn-outline text-sm py-2 px-3"
+                  disabled={uploading}
+                  className="btn-outline text-sm py-2 px-3 disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
-                  Upload
+                  {uploading ? "Uploading..." : "Upload"}
                 </button>
                 {form.logo && (
                   <button
@@ -193,10 +206,11 @@ export default function AdminSettingsPage() {
                 <button
                   type="button"
                   onClick={() => heroInputRef.current?.click()}
-                  className="btn-outline text-sm py-2 px-3"
+                  disabled={uploading}
+                  className="btn-outline text-sm py-2 px-3 disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
-                  Upload hero image
+                  {uploading ? "Uploading..." : "Upload hero image"}
                 </button>
                 {form.heroImage && (
                   <button
