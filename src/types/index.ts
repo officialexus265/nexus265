@@ -28,6 +28,7 @@ export interface SiteSettings {
   tagline: string;
   logo: string;
   heroImage: string;
+  favicon: string;
   email: string;
   phone: string;
   whatsapp: string;
@@ -45,6 +46,7 @@ export const defaultSettings: SiteSettings = {
   tagline: "where ideas connect.",
   logo: "",
   heroImage: "",
+  favicon: "",
   email: "officialnexus265@gmail.com",
   phone: "+265999939040",
   whatsapp: "265999939040",

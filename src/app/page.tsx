@@ -32,7 +32,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <WebsiteGrid websites={websites} emptyMessage="No websites match your search." />
+        <WebsiteGrid websites={websites} fetchFromApi emptyMessage="No websites match your search." />
       </section>
 
       {/* Hire CTA band */}

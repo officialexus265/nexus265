@@ -40,9 +40,21 @@ function ContactForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("sending");
-    await new Promise((r) => setTimeout(r, 1200));
-    setStatus("sent");
-    setForm({ name: "", email: "", subject: "", message: "" });
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setStatus("sent");
+        setForm({ name: "", email: "", subject: "", message: "" });
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
   };
 
   return (
@@ -119,6 +131,11 @@ function ContactForm() {
       {status === "sent" && (
         <p className="text-sm text-success">
           Thanks! I’ll get back to you as soon as possible.
+        </p>
+      )}
+      {status === "error" && (
+        <p className="text-sm text-red-400">
+          Could not send. Please try email or WhatsApp instead.
         </p>
       )}
     </form>

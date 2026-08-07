@@ -12,6 +12,7 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
     tagline: (raw.tagline as string) || defaultSettings.tagline,
     logo: (raw.logo as string) || "",
     heroImage: (raw.heroImage as string) || "",
+    favicon: (raw.favicon as string) || "",
     email: (raw.email as string) || defaultSettings.email,
     phone: (raw.phone as string) || defaultSettings.phone,
     whatsapp: (raw.whatsapp as string) || defaultSettings.whatsapp,

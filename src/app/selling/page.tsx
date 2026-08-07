@@ -39,6 +39,8 @@ export default function SellingPage() {
         <WebsiteGrid
           websites={forSale}
           showPrice
+          fetchFromApi
+          forSaleOnly
           emptyMessage="No projects match your search. Check back soon or hire me for a custom build."
         />
       </section>
