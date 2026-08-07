@@ -7,7 +7,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  LogOut,
   ExternalLink,
   Save,
   X,
@@ -142,12 +141,6 @@ export default function AdminPage() {
     persist(websites.filter((w) => w.id !== id));
   };
 
-  const logout = () => {
-    localStorage.removeItem("devhub_auth");
-    localStorage.removeItem("devhub_user");
-    router.push("/login");
-  };
-
   if (!authorized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -158,28 +151,22 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Admin header */}
-      <div className="border-b border-border bg-card/50 sticky top-16 z-40">
+      {/* Admin toolbar */}
+      <div className="border-b border-border bg-card/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-xl font-bold flex items-center gap-2">
               <Lock className="w-5 h-5 text-accent" />
-              Admin Dashboard
+              Dashboard
             </h1>
             <p className="text-xs text-muted mt-0.5">
-              Manage public listings + private blueprints
+              Manage listings & private notes
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={openNew} className="btn-primary text-sm py-2 px-4">
-              <Plus className="w-4 h-4" />
-              Add Website
-            </button>
-            <button onClick={logout} className="btn-outline text-sm py-2 px-4">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </button>
-          </div>
+          <button onClick={openNew} className="btn-primary text-sm py-2 px-4">
+            <Plus className="w-4 h-4" />
+            Add Website
+          </button>
         </div>
       </div>
 

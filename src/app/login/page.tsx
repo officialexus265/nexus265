@@ -19,23 +19,19 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    // Simple client-side check for demo.
-    // In production replace with NextAuth Credentials + env vars.
-    // Example: ADMIN_EMAIL=you@example.com  ADMIN_PASSWORD=your-secure-pass
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@devhub.com";
     const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "devhub2026";
 
     await new Promise((r) => setTimeout(r, 800));
 
     if (email === adminEmail && password === adminPass) {
-      // Set a simple session flag (replace with real auth cookie/JWT)
       if (typeof window !== "undefined") {
         localStorage.setItem("devhub_auth", "true");
         localStorage.setItem("devhub_user", email);
       }
       router.push("/admin");
     } else {
-      setError("Invalid email or password");
+      setError("Invalid credentials");
       setLoading(false);
     }
   };
@@ -67,10 +63,10 @@ export default function LoginPage() {
               <Shield className="w-7 h-7 text-white" />
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold">
-              Admin Access
+              Sign In
             </h1>
             <p className="mt-2 text-sm text-muted">
-              Only the owner can sign in. Manage websites, private notes & more.
+              Restricted access
             </p>
           </div>
 
@@ -84,10 +80,11 @@ export default function LoginPage() {
                 <input
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-card border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
-                  placeholder="admin@devhub.com"
+                  placeholder="Email address"
                 />
               </div>
             </div>
@@ -101,6 +98,7 @@ export default function LoginPage() {
                 <input
                   type={showPass ? "text" : "password"}
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-11 pr-12 py-3.5 rounded-xl bg-card border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none transition"
@@ -110,6 +108,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted hover:text-white"
+                  aria-label={showPass ? "Hide password" : "Show password"}
                 >
                   {showPass ? (
                     <EyeOff className="w-5 h-5" />
@@ -124,7 +123,7 @@ export default function LoginPage() {
               <motion.p
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg"
+                className="text-sm text-red-400 bg-red-500/10 px-3 py-2 rounded-lg text-center"
               >
                 {error}
               </motion.p>
@@ -136,7 +135,7 @@ export default function LoginPage() {
               className="btn-primary w-full justify-center py-3.5 text-base disabled:opacity-60"
             >
               {loading ? (
-                "Signing in..."
+                "Authenticating..."
               ) : (
                 <>
                   Sign In
@@ -146,18 +145,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-muted">
-            Demo credentials:{" "}
-            <code className="text-accent">admin@devhub.com</code> /{" "}
-            <code className="text-accent">devhub2026</code>
-          </p>
-
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <Link
               href="/"
               className="text-sm text-muted hover:text-accent transition-colors"
             >
-              ← Back to public site
+              ← Back to site
             </Link>
           </div>
         </div>
