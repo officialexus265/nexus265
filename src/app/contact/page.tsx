@@ -11,6 +11,7 @@ import {
   Briefcase,
   CheckCircle2,
 } from "lucide-react";
+import { useSettings } from "@/lib/settings";
 
 function ContactForm() {
   const searchParams = useSearchParams();
@@ -39,7 +40,6 @@ function ContactForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("sending");
-    // Simulate send – replace with real API / Resend / Formspree later
     await new Promise((r) => setTimeout(r, 1200));
     setStatus("sent");
     setForm({ name: "", email: "", subject: "", message: "" });
@@ -49,9 +49,7 @@ function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="block text-sm font-medium text-muted mb-1.5">
-            Name
-          </label>
+          <label className="block text-sm font-medium text-muted mb-1.5">Name</label>
           <input
             required
             type="text"
@@ -62,9 +60,7 @@ function ContactForm() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-muted mb-1.5">
-            Email
-          </label>
+          <label className="block text-sm font-medium text-muted mb-1.5">Email</label>
           <input
             required
             type="email"
@@ -77,9 +73,7 @@ function ContactForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-muted mb-1.5">
-          Subject
-        </label>
+        <label className="block text-sm font-medium text-muted mb-1.5">Subject</label>
         <input
           required
           type="text"
@@ -91,9 +85,7 @@ function ContactForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-muted mb-1.5">
-          Message
-        </label>
+        <label className="block text-sm font-medium text-muted mb-1.5">Message</label>
         <textarea
           required
           rows={5}
@@ -134,9 +126,11 @@ function ContactForm() {
 }
 
 export default function ContactPage() {
+  const { settings } = useSettings();
+  const wa = settings.whatsapp.replace(/\D/g, "");
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
       <section className="relative hero-pattern border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
           <motion.div
@@ -145,8 +139,7 @@ export default function ContactPage() {
             className="max-w-2xl"
           >
             <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-bold">
-              Let’s{" "}
-              <span className="gradient-text">connect</span>
+              Let’s <span className="gradient-text">connect</span>
             </h1>
             <p className="mt-4 text-lg text-muted">
               Whether you want to buy a project, hire me, or just say hello —
@@ -158,12 +151,11 @@ export default function ContactPage() {
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
-          {/* Quick contact methods */}
           <div className="lg:col-span-2 space-y-6">
             <h2 className="font-semibold text-xl mb-2">Reach me directly</h2>
 
             <a
-              href="mailto:you@example.com"
+              href={`mailto:${settings.email}`}
               className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-primary/40 transition group"
             >
               <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition">
@@ -171,12 +163,14 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-medium">Email</p>
-                <p className="text-sm text-muted">you@example.com</p>
+                <p className="text-sm text-muted">{settings.email}</p>
               </div>
             </a>
 
             <a
-              href="https://wa.me/1234567890?text=Hi%2C%20I%20found%20your%20DevHub%20and%20would%20like%20to%20talk"
+              href={`https://wa.me/${wa}?text=${encodeURIComponent(
+                "Hi, I found your site and would like to talk"
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-green-500/40 transition group"
@@ -186,12 +180,12 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-medium">WhatsApp</p>
-                <p className="text-sm text-muted">Chat instantly</p>
+                <p className="text-sm text-muted">{settings.phone}</p>
               </div>
             </a>
 
             <a
-              href="tel:+1234567890"
+              href={`tel:${settings.phone}`}
               className="flex items-center gap-4 p-4 rounded-xl bg-card border border-border hover:border-blue-500/40 transition group"
             >
               <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition">
@@ -199,11 +193,54 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-medium">Call</p>
-                <p className="text-sm text-muted">+1 234 567 890</p>
+                <p className="text-sm text-muted">{settings.phone}</p>
               </div>
             </a>
 
-            {/* Hire CTA */}
+            {/* Social */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              {settings.social.facebook && (
+                <a
+                  href={settings.social.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted hover:text-accent"
+                >
+                  Facebook
+                </a>
+              )}
+              {settings.social.x && (
+                <a
+                  href={settings.social.x}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted hover:text-accent"
+                >
+                  X
+                </a>
+              )}
+              {settings.social.linkedin && (
+                <a
+                  href={settings.social.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted hover:text-accent"
+                >
+                  LinkedIn
+                </a>
+              )}
+              {settings.social.tiktok && (
+                <a
+                  href={settings.social.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted hover:text-accent"
+                >
+                  TikTok
+                </a>
+              )}
+            </div>
+
             <div
               id="hire"
               className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-cyan-500/10 border border-primary/20"
@@ -220,7 +257,6 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Form */}
           <div className="lg:col-span-3">
             <div className="glass rounded-2xl p-6 md:p-8 border border-border">
               <h2 className="font-semibold text-xl mb-6">Send a message</h2>

@@ -16,6 +16,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/lib/settings";
+import Image from "next/image";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Home },
@@ -28,13 +30,13 @@ export function Navbar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { settings } = useSettings();
 
   useEffect(() => {
     const checkAuth = () => {
       setIsLoggedIn(localStorage.getItem("devhub_auth") === "true");
     };
     checkAuth();
-    // Re-check when storage changes (e.g. after login/logout in another tab)
     window.addEventListener("storage", checkAuth);
     return () => window.removeEventListener("storage", checkAuth);
   }, [pathname]);
@@ -48,22 +50,33 @@ export function Navbar() {
   };
 
   const isAdminPage = pathname.startsWith("/admin");
+  const name = settings.siteName || "nexus265";
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-18">
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-white text-lg shadow-lg group-hover:scale-105 transition-transform">
-              D
-            </div>
+            {settings.logo ? (
+              <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-lg group-hover:scale-105 transition-transform bg-white/5">
+                <Image
+                  src={settings.logo}
+                  alt={name}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center font-bold text-white text-sm shadow-lg group-hover:scale-105 transition-transform">
+                {name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <span className="font-[family-name:var(--font-display)] font-semibold text-lg tracking-tight hidden sm:block">
-              Dev<span className="gradient-text">Hub</span>
+              {name}
             </span>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const active = pathname === link.href;
@@ -91,7 +104,6 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
             {!isAdminPage && (
               <Link href="/contact#hire" className="btn-accent text-sm py-2 px-4">
@@ -120,7 +132,6 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
           <button
             onClick={() => setOpen(!open)}
             className="md:hidden p-2 rounded-lg text-muted hover:text-white hover:bg-white/5"
@@ -131,7 +142,6 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       <AnimatePresence>
         {open && (
           <motion.div

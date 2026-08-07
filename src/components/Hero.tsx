@@ -1,34 +1,47 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, Briefcase, Sparkles } from "lucide-react";
+import { useSettings } from "@/lib/settings";
 
 export function Hero() {
+  const { settings } = useSettings();
+  const name = settings.siteName || "nexus265";
+
   return (
-    <section className="relative overflow-hidden hero-pattern">
-      {/* Animated background orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section className="relative overflow-hidden hero-pattern min-h-[70vh] flex items-center">
+      {/* Optional hero background image */}
+      {settings.heroImage && (
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={settings.heroImage}
+            alt=""
+            fill
+            className="object-cover opacity-30"
+            unoptimized
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+        </div>
+      )}
+
+      {/* Animated orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
         <motion.div
           className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl"
-          animate={{
-            x: [0, 40, 0],
-            y: [0, 30, 0],
-            scale: [1, 1.1, 1],
-          }}
+          animate={{ x: [0, 40, 0], y: [0, 30, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div
           className="absolute top-1/3 -right-20 w-80 h-80 rounded-full bg-cyan-400/15 blur-3xl"
-          animate={{
-            x: [0, -30, 0],
-            y: [0, 40, 0],
-          }}
+          animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
         />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 md:pt-28 md:pb-32">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 md:pt-28 md:pb-32">
         <div className="max-w-3xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -46,8 +59,10 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight"
           >
-            All my websites.{" "}
-            <span className="gradient-text">One beautiful hub.</span>
+            {name}.{" "}
+            <span className="gradient-text">
+              {settings.tagline || "where ideas connect."}
+            </span>
           </motion.h1>
 
           <motion.p

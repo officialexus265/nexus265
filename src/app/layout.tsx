@@ -21,9 +21,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "DevHub | My Websites Portfolio & Marketplace",
-  description:
-    "Discover all my websites, explore projects for sale, and get in touch. A modern portfolio hub with live demos and exclusive listings.",
+  title: "nexus265 | where ideas connect.",
+  description: "Portfolio, marketplace and command center — where ideas connect.",
   keywords: ["portfolio", "websites", "web development", "projects for sale", "hire developer"],
 };
 
