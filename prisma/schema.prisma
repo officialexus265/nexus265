@@ -68,3 +68,24 @@ model ChatMessage {
   body      String
   createdAt DateTime    @default(now())
 }
+
+
+model ChatFaq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  options   Json?    // optional quick replies after this answer [{label, nextFaqId?}]
+  parentId  String?  // null = top-level menu option
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatPendingQuestion {
+  id           String   @id @default(cuid())
+  sessionId    String?
+  question     String
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
