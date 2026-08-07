@@ -175,11 +175,8 @@ export default function AdminSettingsPage() {
 
     setUploading(true);
     try {
-      const { url, via } = await uploadImage(file, `nexus265/${field}`);
+      const { url } = await uploadImage(file, `nexus265/${field}`);
       setForm((prev) => ({ ...prev, [field]: url }));
-      if (via === "local") {
-        console.info("Cloudinary not configured — saved as local data URL");
-      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Upload failed. Is Cloudinary configured?");
     } finally {
