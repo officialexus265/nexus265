@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Website {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  longDescription String?
+  thumbnail       String
+  liveUrl         String
+  demoUrl         String?
+  isForSale       Boolean  @default(false)
+  oldPrice        Float?
+  newPrice        Float?
+  tags            String[] @default([])
+  privateNotes    String?
+  featured        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SiteSettings {
+  id        String   @id @default("default")
+  siteName  String   @default("nexus265")
+  tagline   String   @default("where ideas connect.")
+  logo      String?
+  heroImage String?
+  email     String   @default("officialnexus265@gmail.com")
+  phone     String   @default("+265999939040")
+  whatsapp  String   @default("265999939040")
+  social    Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}

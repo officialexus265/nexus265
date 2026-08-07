@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Lock, Mail, Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
@@ -19,26 +20,26 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@devhub.com";
-    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "devhub2026";
+    const res = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-    await new Promise((r) => setTimeout(r, 800));
-
-    if (email === adminEmail && password === adminPass) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("devhub_auth", "true");
-        localStorage.setItem("devhub_user", email);
-      }
-      router.push("/admin");
-    } else {
+    if (res?.error) {
       setError("Invalid credentials");
       setLoading(false);
+      return;
     }
+
+    // Keep a light client flag for navbar (optional)
+    localStorage.setItem("devhub_auth", "true");
+    router.push("/admin");
+    router.refresh();
   };
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-16 relative overflow-hidden">
-      {/* Background effects */}
       <div className="absolute inset-0 hero-pattern pointer-events-none" />
       <motion.div
         className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-indigo-500/20 blur-3xl"
@@ -65,16 +66,12 @@ export default function LoginPage() {
             <h1 className="font-[family-name:var(--font-display)] text-2xl md:text-3xl font-bold">
               Sign In
             </h1>
-            <p className="mt-2 text-sm text-muted">
-              Restricted access
-            </p>
+            <p className="mt-2 text-sm text-muted">Restricted access</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-muted mb-1.5">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-muted mb-1.5">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
                 <input
@@ -90,9 +87,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-muted mb-1.5">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-muted mb-1.5">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
                 <input
@@ -110,11 +105,7 @@ export default function LoginPage() {
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted hover:text-white"
                   aria-label={showPass ? "Hide password" : "Show password"}
                 >
-                  {showPass ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -146,10 +137,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 text-center">
-            <Link
-              href="/"
-              className="text-sm text-muted hover:text-accent transition-colors"
-            >
+            <Link href="/" className="text-sm text-muted hover:text-accent transition-colors">
               ← Back to site
             </Link>
           </div>

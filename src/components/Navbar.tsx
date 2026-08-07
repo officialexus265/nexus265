@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,24 +30,14 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { data: session, status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const { settings } = useSettings();
 
-  useEffect(() => {
-    const checkAuth = () => {
-      setIsLoggedIn(localStorage.getItem("devhub_auth") === "true");
-    };
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
-    return () => window.removeEventListener("storage", checkAuth);
-  }, [pathname]);
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("devhub_auth");
-    localStorage.removeItem("devhub_user");
-    setIsLoggedIn(false);
     setOpen(false);
-    router.push("/");
+    await signOut({ callbackUrl: "/" });
   };
 
   const isAdminPage = pathname.startsWith("/admin");

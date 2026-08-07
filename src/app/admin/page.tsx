@@ -67,27 +67,69 @@ export default function AdminPage() {
 
   useEffect(() => {
     const auth = localStorage.getItem("devhub_auth");
-    if (auth !== "true") {
-      router.replace("/login");
-      return;
-    }
-    setAuthorized(true);
-    // Load from localStorage or fallback to mock
-    const stored = localStorage.getItem("devhub_websites");
-    if (stored) {
+    // Also allow NextAuth cookie session — page will still work after login
+    async function load() {
       try {
-        setWebsites(JSON.parse(stored));
-      } catch {
+        const res = await fetch("/api/websites");
+        if (res.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        if (res.ok) {
+          const data = await res.json();
+          setWebsites(data);
+          setAuthorized(true);
+          return;
+        }
+      } catch {}
+      // Fallback local
+      if (auth !== "true") {
+        router.replace("/login");
+        return;
+      }
+      setAuthorized(true);
+      const stored = localStorage.getItem("devhub_websites");
+      if (stored) {
+        try {
+          setWebsites(JSON.parse(stored));
+        } catch {
+          setWebsites(mockWebsites);
+        }
+      } else {
         setWebsites(mockWebsites);
       }
-    } else {
-      setWebsites(mockWebsites);
     }
+    load();
   }, [router]);
 
   const persist = (list: Website[]) => {
     setWebsites(list);
     localStorage.setItem("devhub_websites", JSON.stringify(list));
+  };
+
+  const apiCreate = async (data: Omit<Website, "id" | "createdAt" | "updatedAt">) => {
+    const res = await fetch("/api/websites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) return res.json();
+    return null;
+  };
+
+  const apiUpdate = async (id: string, data: Partial<Website>) => {
+    const res = await fetch(`/api/websites/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) return res.json();
+    return null;
+  };
+
+  const apiDelete = async (id: string) => {
+    const res = await fetch(`/api/websites/${id}`, { method: "DELETE" });
+    return res.ok;
   };
 
   const openNew = () => {
@@ -122,7 +164,7 @@ export default function AdminPage() {
     setIsNew(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
     const tags = tagInput
       .split(",")
@@ -130,33 +172,42 @@ export default function AdminPage() {
       .filter(Boolean);
 
     const now = new Date().toISOString().slice(0, 10);
+    const payload = { ...form, tags };
 
     if (isNew) {
-      const newSite: Website = {
-        ...form,
-        tags,
-        id: crypto.randomUUID(),
-        createdAt: now,
-        updatedAt: now,
-      };
-      persist([newSite, ...websites]);
+      const created = await apiCreate(payload);
+      if (created) {
+        persist([created, ...websites]);
+      } else {
+        const newSite: Website = {
+          ...form,
+          tags,
+          id: crypto.randomUUID(),
+          createdAt: now,
+          updatedAt: now,
+        };
+        persist([newSite, ...websites]);
+      }
     } else if (editing) {
-      const updated = websites.map((w) =>
-        w.id === editing.id
-          ? { ...w, ...form, tags, updatedAt: now }
-          : w
-      );
-      persist(updated);
+      const updatedRow = await apiUpdate(editing.id, payload);
+      if (updatedRow) {
+        persist(websites.map((w) => (w.id === editing.id ? updatedRow : w)));
+      } else {
+        persist(
+          websites.map((w) =>
+            w.id === editing.id ? { ...w, ...form, tags, updatedAt: now } : w
+          )
+        );
+      }
     }
 
-    setTimeout(() => {
-      setSaving(false);
-      closeModal();
-    }, 400);
+    setSaving(false);
+    closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Delete this website entry permanently?")) return;
+    await apiDelete(id);
     persist(websites.filter((w) => w.id !== id));
   };
 

@@ -5,20 +5,33 @@ import { SiteSettings, defaultSettings } from "@/types";
 
 const STORAGE_KEY = "nexus265_settings";
 
+function normalize(raw: Record<string, unknown>): SiteSettings {
+  const social = (raw.social as SiteSettings["social"]) || defaultSettings.social;
+  return {
+    siteName: (raw.siteName as string) || defaultSettings.siteName,
+    tagline: (raw.tagline as string) || defaultSettings.tagline,
+    logo: (raw.logo as string) || "",
+    heroImage: (raw.heroImage as string) || "",
+    email: (raw.email as string) || defaultSettings.email,
+    phone: (raw.phone as string) || defaultSettings.phone,
+    whatsapp: (raw.whatsapp as string) || defaultSettings.whatsapp,
+    social: { ...defaultSettings.social, ...social },
+  };
+}
+
 export function loadSettings(): SiteSettings {
   if (typeof window === "undefined") return defaultSettings;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultSettings;
-    return { ...defaultSettings, ...JSON.parse(raw) };
+    return normalize(JSON.parse(raw));
   } catch {
     return defaultSettings;
   }
 }
 
-export function saveSettings(settings: SiteSettings) {
+export function saveSettingsLocal(settings: SiteSettings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  // Notify other components in the same tab
   window.dispatchEvent(new Event("nexus265-settings-updated"));
 }
 
@@ -27,8 +40,21 @@ export function useSettings() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Local first for instant UI
     setSettings(loadSettings());
     setReady(true);
+
+    // Then try API (Phase 3 DB)
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          const normalized = normalize(data);
+          setSettings(normalized);
+          saveSettingsLocal(normalized);
+        }
+      })
+      .catch(() => {});
 
     const handler = () => setSettings(loadSettings());
     window.addEventListener("nexus265-settings-updated", handler);
@@ -39,10 +65,16 @@ export function useSettings() {
     };
   }, []);
 
-  const update = useCallback((partial: Partial<SiteSettings>) => {
+  const update = useCallback(async (partial: Partial<SiteSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
-      saveSettings(next);
+      saveSettingsLocal(next);
+      // Persist to DB if available
+      fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      }).catch(() => {});
       return next;
     });
   }, []);
@@ -50,7 +82,6 @@ export function useSettings() {
   return { settings, update, ready };
 }
 
-/** Convert uploaded file to data URL (works offline, no Cloudinary needed yet) */
 export function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
