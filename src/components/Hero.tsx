@@ -12,7 +12,7 @@ export function Hero() {
 
   return (
     <section className="relative overflow-hidden hero-pattern min-h-[75vh] flex items-center">
-      {/* Background image — full bleed, right side stays visible */}
+      {/* Background image */}
       {settings.heroImage && (
         <div className="absolute inset-0 z-0">
           <Image
@@ -23,13 +23,13 @@ export function Hero() {
             unoptimized
             priority
           />
-          {/* Stronger fade on the LEFT so text stays readable; right stays clearer for the image */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/20" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-transparent to-background/80" />
+          {/* Left stays dark for text readability; right is much brighter so the face is clear */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background from-0% via-background/70 via-40% to-transparent to-70%" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background/70" />
         </div>
       )}
 
-      {/* Soft orbs — only on the left so they don't cover the image area */}
+      {/* Soft orb only on the far left */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
         <motion.div
           className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-indigo-500/15 blur-3xl"
@@ -38,7 +38,7 @@ export function Hero() {
         />
       </div>
 
-      {/* Content — locked to the left half */}
+      {/* Content — left side only */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 md:pt-28 md:pb-32">
         <div className="max-w-xl lg:max-w-2xl text-left">
           <motion.div
