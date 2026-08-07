@@ -145,9 +145,27 @@ export default function AdminSettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"];
-    if (!allowed.includes(file.type)) {
-      alert("Please upload PNG, JPG, JPEG, GIF or WebP");
+    const allowedMimes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/gif",
+      "image/webp",
+      "image/x-icon",
+      "image/vnd.microsoft.icon",
+      "image/svg+xml",
+      "application/octet-stream", // some browsers send this for .ico
+    ];
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const allowedExt = ["png", "jpg", "jpeg", "gif", "webp", "ico", "svg"];
+    const mimeOk = !file.type || allowedMimes.includes(file.type);
+    const extOk = allowedExt.includes(ext);
+    if (!mimeOk && !extOk) {
+      alert("Please upload PNG, JPG, GIF, WebP, SVG or ICO");
+      return;
+    }
+    if (field === "favicon" && !["png", "jpg", "jpeg", "ico", "svg", "webp"].includes(ext) && file.type && !allowedMimes.includes(file.type)) {
+      alert("Favicon: use PNG, ICO, SVG or WebP");
       return;
     }
     if (file.size > 8 * 1024 * 1024) {

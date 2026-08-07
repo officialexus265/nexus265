@@ -41,10 +41,16 @@ export async function POST(req: NextRequest) {
       "image/jpg",
       "image/gif",
       "image/webp",
+      "image/x-icon",
+      "image/vnd.microsoft.icon",
+      "image/svg+xml",
+      "application/octet-stream",
     ];
-    if (!allowed.includes(file.type)) {
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const allowedExt = ["png", "jpg", "jpeg", "gif", "webp", "ico", "svg"];
+    if (!allowed.includes(file.type) && !allowedExt.includes(ext)) {
       return NextResponse.json(
-        { error: "Only PNG, JPG, GIF, WebP allowed" },
+        { error: "Only PNG, JPG, GIF, WebP, SVG or ICO allowed" },
         { status: 400 }
       );
     }

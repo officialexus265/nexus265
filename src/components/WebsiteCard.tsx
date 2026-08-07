@@ -89,46 +89,66 @@ export function WebsiteCard({ site, index = 0, showPrice = false }: WebsiteCardP
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          <a
-            href={site.liveUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary text-xs py-2 px-3"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            Visit Site
-          </a>
-
-          {site.demoUrl && (
+        {/* Actions — clean 2-row grid */}
+        <div className="pt-3 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             <a
-              href={site.demoUrl}
+              href={site.liveUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-outline text-xs py-2 px-3"
+              className="btn-primary text-xs py-2.5 px-3 justify-center w-full"
             >
-              <Play className="w-3.5 h-3.5" />
-              View Demo
+              <ExternalLink className="w-3.5 h-3.5" />
+              Visit Site
             </a>
+            {site.demoUrl ? (
+              <a
+                href={site.demoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-outline text-xs py-2.5 px-3 justify-center w-full"
+              >
+                <Play className="w-3.5 h-3.5" />
+                View Demo
+              </a>
+            ) : site.isForSale ? (
+              <Link
+                href={`/contact?project=${encodeURIComponent(site.title)}#hire`}
+                className="btn-outline text-xs py-2.5 px-3 justify-center w-full"
+              >
+                Talk to Developer
+              </Link>
+            ) : (
+              <Link
+                href="/contact#hire"
+                className="btn-outline text-xs py-2.5 px-3 justify-center w-full"
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                Hire Me
+              </Link>
+            )}
+          </div>
+          {(site.demoUrl || site.isForSale) && (
+            <div className="grid grid-cols-2 gap-2">
+              {site.demoUrl && site.isForSale && (
+                <Link
+                  href={`/contact?project=${encodeURIComponent(site.title)}#hire`}
+                  className="btn-outline text-xs py-2.5 px-3 justify-center w-full"
+                >
+                  Talk to Developer
+                </Link>
+              )}
+              <Link
+                href="/contact#hire"
+                className={`btn-outline text-xs py-2.5 px-3 justify-center w-full border-transparent hover:border-primary/40 ${
+                  site.demoUrl && site.isForSale ? "" : "col-span-2"
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                Hire Me
+              </Link>
+            </div>
           )}
-
-          {site.isForSale && (
-            <Link
-              href={`/contact?project=${encodeURIComponent(site.title)}#hire`}
-              className="btn-outline text-xs py-2 px-3"
-            >
-              Talk to Developer
-            </Link>
-          )}
-
-          <Link
-            href="/contact#hire"
-            className="ml-auto btn-outline text-xs py-2 px-3 border-transparent hover:border-primary/40"
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            Hire Me
-          </Link>
         </div>
       </div>
     </motion.article>
