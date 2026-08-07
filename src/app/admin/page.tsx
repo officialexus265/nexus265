@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,11 +14,13 @@ import {
   Eye,
   EyeOff,
   Lock,
+  Settings,
 } from "lucide-react";
 import { mockWebsites } from "@/data/websites";
 import { Website } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
+import { SearchBar } from "@/components/SearchBar";
 
 const emptyForm: Omit<Website, "id" | "createdAt" | "updatedAt"> = {
   title: "",
@@ -45,6 +47,23 @@ export default function AdminPage() {
   const [showPrivate, setShowPrivate] = useState(true);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredWebsites = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return websites;
+    return websites.filter((site) => {
+      const haystack = [
+        site.title,
+        site.description,
+        site.privateNotes || "",
+        ...(site.tags || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [websites, search]);
 
   useEffect(() => {
     const auth = localStorage.getItem("devhub_auth");
@@ -163,10 +182,16 @@ export default function AdminPage() {
               Manage listings & private notes
             </p>
           </div>
-          <button onClick={openNew} className="btn-primary text-sm py-2 px-4">
-            <Plus className="w-4 h-4" />
-            Add Website
-          </button>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/settings" className="btn-outline text-sm py-2 px-4">
+              <Settings className="w-4 h-4" />
+              Settings
+            </Link>
+            <button onClick={openNew} className="btn-primary text-sm py-2 px-4">
+              <Plus className="w-4 h-4" />
+              Add Website
+            </button>
+          </div>
         </div>
       </div>
 
@@ -189,9 +214,27 @@ export default function AdminPage() {
           ))}
         </div>
 
+        {/* Search */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by title, description, tags or notes..."
+            className="max-w-lg"
+          />
+          {search && (
+            <p className="text-sm text-muted">
+              {filteredWebsites.length} result{filteredWebsites.length !== 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
+
         {/* Table / list */}
         <div className="space-y-4">
-          {websites.map((site) => (
+          {filteredWebsites.length === 0 && (
+            <p className="text-center text-muted py-12">No websites match your search.</p>
+          )}
+          {filteredWebsites.map((site) => (
             <motion.div
               key={site.id}
               layout

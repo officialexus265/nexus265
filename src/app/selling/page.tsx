@@ -1,11 +1,12 @@
-import { WebsiteCard } from "@/components/WebsiteCard";
+import { WebsiteGrid } from "@/components/WebsiteGrid";
 import { getForSaleWebsites } from "@/data/websites";
 import Link from "next/link";
 import { Briefcase, Tag } from "lucide-react";
 
 export const metadata = {
   title: "Projects for Sale | DevHub",
-  description: "Ready-to-launch websites and SaaS starters at special prices. View demos and negotiate.",
+  description:
+    "Ready-to-launch websites and SaaS starters at special prices. View demos and negotiate.",
 };
 
 export default function SellingPage() {
@@ -22,8 +23,7 @@ export default function SellingPage() {
               Limited-time discounted prices
             </div>
             <h1 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl font-bold leading-tight">
-              Projects{" "}
-              <span className="gradient-text">for Sale</span>
+              Projects <span className="gradient-text">for Sale</span>
             </h1>
             <p className="mt-4 text-lg text-muted leading-relaxed">
               Production-ready websites and starters. Each comes with clean code,
@@ -34,23 +34,13 @@ export default function SellingPage() {
         </div>
       </section>
 
-      {/* Grid */}
+      {/* Grid + Search */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {forSale.length === 0 ? (
-          <p className="text-center text-muted py-20">
-            No projects currently marked for sale. Check back soon or{" "}
-            <Link href="/contact#hire" className="text-accent hover:underline">
-              hire me
-            </Link>{" "}
-            for a custom build.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {forSale.map((site, i) => (
-              <WebsiteCard key={site.id} site={site} index={i} showPrice />
-            ))}
-          </div>
-        )}
+        <WebsiteGrid
+          websites={forSale}
+          showPrice
+          emptyMessage="No projects match your search. Check back soon or hire me for a custom build."
+        />
       </section>
 
       {/* Negotiation note */}

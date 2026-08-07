@@ -1,5 +1,5 @@
 import { Hero } from "@/components/Hero";
-import { WebsiteCard } from "@/components/WebsiteCard";
+import { WebsiteGrid } from "@/components/WebsiteGrid";
 import { getPublicWebsites } from "@/data/websites";
 import Link from "next/link";
 import { Briefcase, ArrowRight } from "lucide-react";
@@ -13,7 +13,7 @@ export default function HomePage() {
 
       {/* Websites grid */}
       <section id="websites" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-3xl md:text-4xl font-bold">
               My Websites
@@ -32,11 +32,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {websites.map((site, i) => (
-            <WebsiteCard key={site.id} site={site} index={i} />
-          ))}
-        </div>
+        <WebsiteGrid websites={websites} emptyMessage="No websites match your search." />
       </section>
 
       {/* Hire CTA band */}
