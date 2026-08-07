@@ -235,6 +235,9 @@ export default function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/admin/chat" className="btn-outline text-sm py-2 px-4">
+              Chat
+            </Link>
             <Link href="/admin/settings" className="btn-outline text-sm py-2 px-4">
               <Settings className="w-4 h-4" />
               Settings
@@ -455,8 +458,12 @@ export default function AdminPage() {
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
-                            const { url } = await uploadImage(file, "nexus265/thumbnails");
-                            setForm((prev) => ({ ...prev, thumbnail: url }));
+                            try {
+                              const { url } = await uploadImage(file, "nexus265/thumbnails");
+                              setForm((prev) => ({ ...prev, thumbnail: url }));
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : "Upload failed");
+                            }
                           }}
                         />
                       </label>

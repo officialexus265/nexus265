@@ -56,6 +56,7 @@ export interface SiteSettings {
     tiktok: string;
   };
   slides: HeroSlide[];
+  slideSpeedMs: number;
 }
 
 export const defaultSlide1 = (): HeroSlide => ({
@@ -118,4 +119,5 @@ export const defaultSettings: SiteSettings = {
     tiktok: "",
   },
   slides: [defaultSlide1(), defaultSlide2(), defaultSlide3()],
+  slideSpeedMs: 7000,
 };

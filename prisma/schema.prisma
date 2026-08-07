@@ -44,6 +44,27 @@ model SiteSettings {
   phone     String   @default("+265999939040")
   whatsapp  String   @default("265999939040")
   social    Json     @default("{}")
-  slides    Json?
-  updatedAt DateTime @updatedAt
+  slides       Json?
+  slideSpeedMs Int   @default(7000)
+  updatedAt    DateTime @updatedAt
+}
+
+
+model ChatSession {
+  id           String        @id @default(cuid())
+  visitorName  String?
+  visitorEmail String?
+  status       String        @default("open") // open | active | closed
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  messages     ChatMessage[]
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    String      // visitor | admin
+  body      String
+  createdAt DateTime    @default(now())
 }

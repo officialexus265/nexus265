@@ -180,8 +180,8 @@ export default function AdminSettingsPage() {
       if (via === "local") {
         console.info("Cloudinary not configured — saved as local data URL");
       }
-    } catch {
-      alert("Upload failed");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload failed. Is Cloudinary configured?");
     } finally {
       setUploading(false);
     }
@@ -379,11 +379,30 @@ export default function AdminSettingsPage() {
 
         {/* Hero slides */}
         <section className="bg-card border border-border rounded-2xl p-6 space-y-6">
-          <div>
-            <h2 className="font-semibold text-lg">Hero slider (3 slides)</h2>
-            <p className="text-sm text-muted mt-1">
-              Slide 1 is your main hero. Slides 2 and 3 are fully customizable.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <h2 className="font-semibold text-lg">Hero slider (3 slides)</h2>
+              <p className="text-sm text-muted mt-1">
+                Slide 1 is your main hero. Slides 2 and 3 are fully customizable.
+              </p>
+            </div>
+            <div className="w-full sm:w-48">
+              <label className="block text-xs text-muted mb-1">Slide speed (seconds)</label>
+              <input
+                type="number"
+                min={2}
+                max={30}
+                step={1}
+                value={Math.round((form.slideSpeedMs || 7000) / 1000)}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    slideSpeedMs: Math.max(2, Number(e.target.value) || 7) * 1000,
+                  })
+                }
+                className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+              />
+            </div>
           </div>
           {(form.slides || [defaultSlide1(), defaultSlide2(), defaultSlide3()]).map((slide, idx) => (
             <div key={slide.id || idx} className="border border-border rounded-xl p-4 space-y-3">

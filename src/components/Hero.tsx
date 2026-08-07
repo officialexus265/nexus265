@@ -108,11 +108,13 @@ export function Hero() {
     setIndex((i) => (i - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
+  const speed = Math.max(2000, settings.slideSpeedMs || 7000);
+
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(next, 7000);
+    const t = setInterval(next, speed);
     return () => clearInterval(t);
-  }, [next, paused]);
+  }, [next, paused, speed]);
 
   return (
     <section

@@ -55,6 +55,7 @@ export async function PUT(req: NextRequest) {
         whatsapp: body.whatsapp,
         social: body.social || {},
         slides: body.slides || null,
+        slideSpeedMs: body.slideSpeedMs ?? 7000,
       },
       create: {
         id: "default",
@@ -68,6 +69,7 @@ export async function PUT(req: NextRequest) {
         whatsapp: body.whatsapp,
         social: body.social || {},
         slides: body.slides || null,
+        slideSpeedMs: body.slideSpeedMs ?? 7000,
       },
     });
 

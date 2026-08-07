@@ -1,33 +1,26 @@
-/** Upload a file to Cloudinary via our API. Falls back to data-URL if Cloudinary is offline. */
+/** Upload a file to Cloudinary via our API. */
 export async function uploadImage(
   file: File,
   folder = "nexus265"
-): Promise<{ url: string; via: "cloudinary" | "local" }> {
+): Promise<{ url: string; via: "cloudinary" }> {
   const form = new FormData();
   form.append("file", file);
   form.append("folder", folder);
 
-  try {
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: form,
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      if (data.url) return { url: data.url, via: "cloudinary" };
-    }
-  } catch {
-    /* fall through */
-  }
-
-  // Local fallback (data URL) — works without Cloudinary
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: form,
   });
 
-  return { url: dataUrl, via: "local" };
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data.error || "Upload failed. Check Cloudinary env vars and login.");
+  }
+
+  if (!data.url) {
+    throw new Error("Upload returned no URL");
+  }
+
+  return { url: data.url, via: "cloudinary" };
 }

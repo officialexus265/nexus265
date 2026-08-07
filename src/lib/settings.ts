@@ -39,6 +39,7 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
     whatsapp: (raw.whatsapp as string) || defaultSettings.whatsapp,
     social: { ...defaultSettings.social, ...social },
     slides: ensureSlides(raw.slides),
+    slideSpeedMs: Number(raw.slideSpeedMs) || defaultSettings.slideSpeedMs,
   };
 }
 
