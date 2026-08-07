@@ -44,5 +44,6 @@ model SiteSettings {
   phone     String   @default("+265999939040")
   whatsapp  String   @default("265999939040")
   social    Json     @default("{}")
+  slides    Json?
   updatedAt DateTime @updatedAt
 }

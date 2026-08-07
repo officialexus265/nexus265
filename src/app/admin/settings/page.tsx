@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useSettings } from "@/lib/settings";
 import { uploadImage } from "@/lib/upload";
-import { SiteSettings, defaultSettings } from "@/types";
+import { SiteSettings, defaultSettings, HeroSlide, defaultSlide1, defaultSlide2, defaultSlide3 } from "@/types";
 
 
 function AccountForm() {
@@ -374,6 +374,177 @@ export default function AdminSettingsPage() {
               </div>
             </div>
           </div>
+        </section>
+
+
+        {/* Hero slides */}
+        <section className="bg-card border border-border rounded-2xl p-6 space-y-6">
+          <div>
+            <h2 className="font-semibold text-lg">Hero slider (3 slides)</h2>
+            <p className="text-sm text-muted mt-1">
+              Slide 1 is your main hero. Slides 2 and 3 are fully customizable.
+            </p>
+          </div>
+          {(form.slides || [defaultSlide1(), defaultSlide2(), defaultSlide3()]).map((slide, idx) => (
+            <div key={slide.id || idx} className="border border-border rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-semibold text-accent">Slide {idx + 1}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-muted mb-1">Badge</label>
+                  <input
+                    value={slide.badge}
+                    onChange={(e) => {
+                      const slides = [...(form.slides || [])];
+                      slides[idx] = { ...slides[idx], badge: e.target.value };
+                      setForm({ ...form, slides });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted mb-1">Title</label>
+                  <input
+                    value={slide.title}
+                    onChange={(e) => {
+                      const slides = [...(form.slides || [])];
+                      slides[idx] = { ...slides[idx], title: e.target.value };
+                      setForm({ ...form, slides });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted mb-1">Highlight (gradient text)</label>
+                  <input
+                    value={slide.highlight}
+                    onChange={(e) => {
+                      const slides = [...(form.slides || [])];
+                      slides[idx] = { ...slides[idx], highlight: e.target.value };
+                      setForm({ ...form, slides });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-muted mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    value={slide.description}
+                    onChange={(e) => {
+                      const slides = [...(form.slides || [])];
+                      slides[idx] = { ...slides[idx], description: e.target.value };
+                      setForm({ ...form, slides });
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary resize-none"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-muted mb-1">Background image URL or upload</label>
+                  <div className="flex gap-2">
+                    <input
+                      value={slide.image}
+                      onChange={(e) => {
+                        const slides = [...(form.slides || [])];
+                        slides[idx] = { ...slides[idx], image: e.target.value };
+                        setForm({ ...form, slides });
+                      }}
+                      className="flex-1 px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                      placeholder="https://... or upload"
+                    />
+                    <label className="btn-outline text-xs py-2 px-3 cursor-pointer shrink-0">
+                      <Upload className="w-4 h-4" />
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          try {
+                            const { url } = await uploadImage(file, `nexus265/slide-${idx + 1}`);
+                            const slides = [...(form.slides || [])];
+                            slides[idx] = { ...slides[idx], image: url };
+                            setForm({ ...form, slides });
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                  {slide.image && (
+                    <div className="relative mt-2 h-24 rounded-lg overflow-hidden border border-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={slide.image} alt="" className="w-full h-full object-cover object-right" />
+                    </div>
+                  )}
+                </div>
+                {[0, 1, 2].map((bi) => (
+                  <div key={bi} className="sm:col-span-2 grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <label className="block text-xs text-muted mb-1">Button {bi + 1} label</label>
+                      <input
+                        value={slide.buttons?.[bi]?.label || ""}
+                        onChange={(e) => {
+                          const slides = [...(form.slides || [])];
+                          const buttons = [...(slides[idx].buttons || [])];
+                          while (buttons.length <= bi) {
+                            buttons.push({ label: "", href: "#", style: "outline" });
+                          }
+                          buttons[bi] = { ...buttons[bi], label: e.target.value };
+                          slides[idx] = { ...slides[idx], buttons: buttons.filter((b) => b.label) };
+                          setForm({ ...form, slides });
+                        }}
+                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                        placeholder="Leave empty to hide"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted mb-1">Style</label>
+                      <select
+                        value={slide.buttons?.[bi]?.style || "outline"}
+                        onChange={(e) => {
+                          const slides = [...(form.slides || [])];
+                          const buttons = [...(slides[idx].buttons || [])];
+                          if (buttons[bi]) {
+                            buttons[bi] = {
+                              ...buttons[bi],
+                              style: e.target.value as "primary" | "outline" | "accent",
+                            };
+                            slides[idx] = { ...slides[idx], buttons };
+                            setForm({ ...form, slides });
+                          }
+                        }}
+                        className="w-full px-2 py-2 rounded-lg bg-background border border-border text-sm outline-none"
+                      >
+                        <option value="primary">Primary</option>
+                        <option value="outline">Outline</option>
+                        <option value="accent">Accent</option>
+                      </select>
+                    </div>
+                    <div className="col-span-3">
+                      <label className="block text-xs text-muted mb-1">Button {bi + 1} link</label>
+                      <input
+                        value={slide.buttons?.[bi]?.href || ""}
+                        onChange={(e) => {
+                          const slides = [...(form.slides || [])];
+                          const buttons = [...(slides[idx].buttons || [])];
+                          if (buttons[bi]) {
+                            buttons[bi] = { ...buttons[bi], href: e.target.value };
+                            slides[idx] = { ...slides[idx], buttons };
+                            setForm({ ...form, slides });
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                        placeholder="/selling or #websites or /contact#hire"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* Contact */}

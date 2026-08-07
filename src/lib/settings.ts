@@ -1,9 +1,30 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { SiteSettings, defaultSettings } from "@/types";
+import {
+  SiteSettings,
+  defaultSettings,
+  defaultSlide1,
+  defaultSlide2,
+  defaultSlide3,
+  HeroSlide,
+} from "@/types";
 
 const STORAGE_KEY = "nexus265_settings";
+
+function ensureSlides(slides: unknown): HeroSlide[] {
+  const defaults = [defaultSlide1(), defaultSlide2(), defaultSlide3()];
+  if (!Array.isArray(slides) || slides.length === 0) return defaults;
+  return [0, 1, 2].map((i) => {
+    const s = slides[i] as Partial<HeroSlide> | undefined;
+    return {
+      ...defaults[i],
+      ...s,
+      id: String(i + 1),
+      buttons: s?.buttons?.length ? s.buttons : defaults[i].buttons,
+    };
+  });
+}
 
 function normalize(raw: Record<string, unknown>): SiteSettings {
   const social = (raw.social as SiteSettings["social"]) || defaultSettings.social;
@@ -17,6 +38,7 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
     phone: (raw.phone as string) || defaultSettings.phone,
     whatsapp: (raw.whatsapp as string) || defaultSettings.whatsapp,
     social: { ...defaultSettings.social, ...social },
+    slides: ensureSlides(raw.slides),
   };
 }
 
@@ -41,16 +63,18 @@ export function useSettings() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    // Local first for instant UI
     setSettings(loadSettings());
     setReady(true);
 
-    // Then try API (Phase 3 DB)
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data) {
           const normalized = normalize(data);
+          // Sync legacy heroImage into slide 1 if slide 1 has no image
+          if (normalized.heroImage && !normalized.slides[0].image) {
+            normalized.slides[0].image = normalized.heroImage;
+          }
           setSettings(normalized);
           saveSettingsLocal(normalized);
         }
@@ -69,8 +93,8 @@ export function useSettings() {
   const update = useCallback(async (partial: Partial<SiteSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
+      if (partial.slides) next.slides = ensureSlides(partial.slides);
       saveSettingsLocal(next);
-      // Persist to DB if available
       fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
