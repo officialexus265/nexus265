@@ -235,6 +235,9 @@ export default function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/admin/bot" className="btn-outline text-sm py-2 px-4">
+              Train bot
+            </Link>
             <Link href="/admin/chat" className="btn-outline text-sm py-2 px-4">
               Chat
             </Link>

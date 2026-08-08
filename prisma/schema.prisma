@@ -89,3 +89,55 @@ model ChatPendingQuestion {
   resolved     Boolean  @default(false)
   createdAt    DateTime @default(now())
 }
+
+
+model BotNode {
+  id          String      @id @default(cuid())
+  kind        String      @default("message") // welcome | message
+  title       String      @default("") // admin label on canvas
+  body        String      @default("")
+  positionX   Float       @default(0)
+  positionY   Float       @default(0)
+  isWelcome   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  options     BotOption[] @relation("NodeOptions")
+  incoming    BotOption[] @relation("OptionTarget")
+}
+
+model BotOption {
+  id         String   @id @default(cuid())
+  nodeId     String
+  node       BotNode  @relation("NodeOptions", fields: [nodeId], references: [id], onDelete: Cascade)
+  label      String
+  sortOrder  Int      @default(0)
+  // next = only next message | url = open page | human = live agent | next_url = message then can also have url on next
+  action     String   @default("next") // next | url | human | next_url
+  nextNodeId String?
+  nextNode   BotNode? @relation("OptionTarget", fields: [nextNodeId], references: [id], onDelete: SetNull)
+  url        String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model BotLanguage {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g. en, ny, fr
+  name      String   // e.g. English, Chichewa
+  isActive  Boolean  @default(false)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model BotTranslation {
+  id         String   @id @default(cuid())
+  languageId String
+  // targetType: node_body | option_label
+  targetType String
+  targetId   String
+  text       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([languageId, targetType, targetId])
+}

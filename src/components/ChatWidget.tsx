@@ -9,21 +9,27 @@ type Msg = {
   id: string;
   sender: "bot" | "visitor" | "admin";
   body: string;
-  createdAt?: string;
 };
 
-type FaqOption = { label: string; href?: string; action?: string; nextFaqId?: string };
-type Faq = {
+type BotOpt = {
   id: string;
-  question: string;
-  answer: string;
-  options?: FaqOption[] | null;
-  isActive?: boolean;
+  label: string;
+  action: string;
+  nextNodeId?: string | null;
+  url?: string | null;
+};
+
+type BotNode = {
+  id: string;
+  body: string;
+  isWelcome?: boolean;
+  options?: BotOpt[];
 };
 
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [botNodes, setBotNodes] = useState<BotNode[]>([]);
+  const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [humanMode, setHumanMode] = useState(false);
   const [name, setName] = useState("");
@@ -32,26 +38,21 @@ export function ChatWidget() {
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const currentNode = botNodes.find((n) => n.id === currentNodeId) || null;
+  const currentOptions = currentNode?.options || [];
+
   useEffect(() => {
-    fetch("/api/chat/faq")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((d) => setFaqs(Array.isArray(d) ? d : []))
+    fetch("/api/bot/flow")
+      .then((r) => (r.ok ? r.json() : { nodes: [] }))
+      .then((d) => {
+        const nodes: BotNode[] = d.nodes || [];
+        setBotNodes(nodes);
+        const welcome = nodes.find((n) => n.isWelcome) || nodes[0];
+        if (welcome) setCurrentNodeId(welcome.id);
+      })
       .catch(() => {});
 
-    const openHandler = () => {
-      setOpen(true);
-      setMessages((m) =>
-        m.length
-          ? m
-          : [
-              {
-                id: "welcome",
-                sender: "bot",
-                body: "Hi! Welcome to nexus265. How can I help you today? Pick an option below, or type your question.",
-              },
-            ]
-      );
-    };
+    const openHandler = () => setOpen(true);
     window.addEventListener("nexus265-open-chat", openHandler);
     return () => window.removeEventListener("nexus265-open-chat", openHandler);
   }, []);
@@ -82,14 +83,13 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (!open) return;
-    // Only scroll inside the chat messages container, not the page
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages, open]);
+  }, [messages, open, currentOptions]);
 
-  const pushBot = (body: string) => {
+  const pushBot = (body: string, id?: string) => {
     setMessages((m) => [
       ...m,
-      { id: `bot-${Date.now()}-${Math.random()}`, sender: "bot", body },
+      { id: id || `bot-${Date.now()}`, sender: "bot", body },
     ]);
   };
 
@@ -101,18 +101,29 @@ export function ChatWidget() {
   };
 
   const showWelcome = () => {
-    setMessages([
-      {
-        id: "welcome",
-        sender: "bot",
-        body: "Hi! Welcome to nexus265. How can I help you today? Pick an option below, or type your question.",
-      },
-    ]);
+    const welcome = botNodes.find((n) => n.isWelcome) || botNodes[0];
+    if (welcome) {
+      setCurrentNodeId(welcome.id);
+      setHumanMode(false);
+      setMessages([{ id: welcome.id, sender: "bot", body: welcome.body }]);
+    } else {
+      setMessages([
+        {
+          id: "welcome",
+          sender: "bot",
+          body: "Hi! Welcome to nexus265. How can I help you today?",
+        },
+      ]);
+    }
   };
+
+  useEffect(() => {
+    if (open && messages.length === 0 && botNodes.length > 0) showWelcome();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, botNodes]);
 
   const openChat = () => {
     setOpen(true);
-    if (messages.length === 0) showWelcome();
   };
 
   const connectHuman = async (prefill?: string) => {
@@ -131,7 +142,9 @@ export function ChatWidget() {
               "The agent is offline right now — leave a message and they'll be notified.";
           }
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
       const res = await fetch("/api/chat/sessions", {
         method: "POST",
@@ -145,6 +158,7 @@ export function ChatWidget() {
       if (res.ok) {
         setSessionId(data.id);
         setHumanMode(true);
+        setCurrentNodeId(null);
         pushBot(
           presenceNote
             ? presenceNote + " Type your message below."
@@ -152,7 +166,7 @@ export function ChatWidget() {
         );
       } else {
         pushBot(
-          "Couldn't reach live chat right now (database may be offline). Please use the Contact page or WhatsApp."
+          "Couldn't reach live chat right now. Please use the Contact page or WhatsApp."
         );
       }
     } finally {
@@ -160,42 +174,37 @@ export function ChatWidget() {
     }
   };
 
-  const selectFaq = (faq: Faq) => {
-    pushVisitor(faq.question);
-    pushBot(faq.answer);
+  const handleOption = async (opt: BotOpt) => {
+    pushVisitor(opt.label);
 
-    const opts = (faq.options || []) as FaqOption[];
-    const wantsHuman = opts.some((o) => o.action === "human") && faq.question.toLowerCase().includes("human");
-    if (wantsHuman || faq.question.toLowerCase().includes("talk to a human")) {
-      // still show options; user can confirm
-    }
-  };
-
-  const handleOption = async (opt: FaqOption) => {
     if (opt.action === "human") {
-      pushVisitor(opt.label);
-      await connectHuman();
+      await connectHuman(opt.label);
       return;
     }
-    if (opt.href) {
-      pushVisitor(opt.label);
-      pushBot(`Opening: ${opt.label}. You can also continue chatting here.`);
-      window.location.href = opt.href;
-      return;
-    }
-    if (opt.nextFaqId) {
-      const next = faqs.find((f) => f.id === opt.nextFaqId);
-      if (next) selectFaq(next);
-    }
-  };
 
-  const matchFaq = (input: string): Faq | null => {
-    const q = input.toLowerCase().trim();
-    return (
-      faqs.find((f) => f.question.toLowerCase() === q) ||
-      faqs.find((f) => q.includes(f.question.toLowerCase()) || f.question.toLowerCase().includes(q)) ||
-      null
-    );
+    if (opt.action === "url" && opt.url) {
+      pushBot(`Opening ${opt.label}…`);
+      window.location.href = opt.url;
+      return;
+    }
+
+    if (opt.action === "next" || opt.action === "next_url") {
+      if (opt.nextNodeId) {
+        const next = botNodes.find((n) => n.id === opt.nextNodeId);
+        if (next) {
+          setCurrentNodeId(next.id);
+          pushBot(next.body, next.id);
+        } else {
+          pushBot("That path isn't connected yet. Try another option or talk to a human.");
+        }
+      } else {
+        pushBot("That path isn't connected yet. Connect it in Train bot, or talk to a human.");
+      }
+      if (opt.action === "next_url" && opt.url) {
+        // optional: open in new tab so chat remains
+        window.open(opt.url, "_blank", "noopener,noreferrer");
+      }
+    }
   };
 
   const send = async () => {
@@ -213,13 +222,26 @@ export function ChatWidget() {
       return;
     }
 
-    const matched = matchFaq(body);
-    if (matched) {
-      pushBot(matched.answer);
+    // Try match option labels
+    const match = currentOptions.find(
+      (o) => o.label.toLowerCase() === body.toLowerCase()
+    );
+    if (match) {
+      await handleOption(match);
       return;
     }
 
-    // No match — reserve question + offer human
+    // Search all nodes' option labels
+    for (const n of botNodes) {
+      const o = (n.options || []).find(
+        (x) => x.label.toLowerCase() === body.toLowerCase()
+      );
+      if (o) {
+        await handleOption(o);
+        return;
+      }
+    }
+
     fetch("/api/chat/pending", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -229,9 +251,8 @@ export function ChatWidget() {
     pushBot(
       "I don't have information on that yet. Would you like to be connected to the developer?"
     );
+    setCurrentNodeId(null);
   };
-
-  const menuFaqs = faqs.filter((f) => f.isActive !== false);
 
   return (
     <>
@@ -250,10 +271,14 @@ export function ChatWidget() {
             <div>
               <p className="font-semibold text-sm">nexus265 Assistant</p>
               <p className="text-xs text-muted">
-                {humanMode ? "Live with developer" : "Automated help + live agent"}
+                {humanMode ? "Live with developer" : "Guided help + live agent"}
               </p>
             </div>
-            <button type="button" onClick={() => setOpen(false)} className="p-1 text-muted hover:text-white">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="p-1 text-muted hover:text-white"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -275,80 +300,46 @@ export function ChatWidget() {
               </div>
             ))}
 
-            {/* Quick options when not in human mode */}
-            {!humanMode && menuFaqs.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {menuFaqs.map((f) => (
+            {!humanMode && currentOptions.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {currentOptions.map((opt) => (
                   <button
-                    key={f.id}
+                    key={opt.id}
                     type="button"
-                    onClick={() => selectFaq(f)}
+                    disabled={busy}
+                    onClick={() => handleOption(opt)}
                     className="text-xs px-3 py-1.5 rounded-full border border-primary/40 text-indigo-200 hover:bg-primary/20 transition"
                   >
-                    {f.question}
+                    {opt.label}
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Options from last bot answer that has options */}
             {!humanMode &&
-              (() => {
-                const lastBot = [...messages].reverse().find((m) => m.sender === "bot");
-                if (!lastBot) return null;
-                const faq = faqs.find((f) => f.answer === lastBot.body);
-                const opts = (faq?.options || []) as FaqOption[];
-                if (!opts.length) {
-                  // always offer human after unknown
-                  if (lastBot.body.includes("don't have information")) {
-                    return (
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => connectHuman(messages.filter((m) => m.sender === "visitor").slice(-1)[0]?.body)}
-                          className="text-xs px-3 py-1.5 rounded-full border border-accent/50 text-accent hover:bg-accent/10"
-                        >
-                          Yes, connect me
-                        </button>
-                        <button
-                          type="button"
-                          onClick={showWelcome}
-                          className="text-xs px-3 py-1.5 rounded-full border border-white/20 text-muted hover:bg-white/5"
-                        >
-                          Back to menu
-                        </button>
-                      </div>
-                    );
-                  }
-                  return null;
-                }
-                return (
-                  <div className="flex flex-wrap gap-2">
-                    {opts.map((opt, i) =>
-                      opt.href ? (
-                        <Link
-                          key={i}
-                          href={opt.href}
-                          className="text-xs px-3 py-1.5 rounded-full border border-primary/40 text-indigo-200 hover:bg-primary/20"
-                        >
-                          {opt.label}
-                        </Link>
-                      ) : (
-                        <button
-                          key={i}
-                          type="button"
-                          disabled={busy}
-                          onClick={() => handleOption(opt)}
-                          className="text-xs px-3 py-1.5 rounded-full border border-primary/40 text-indigo-200 hover:bg-primary/20"
-                        >
-                          {opt.label}
-                        </button>
+              messages.some((m) => m.body.includes("don't have information")) && (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() =>
+                      connectHuman(
+                        messages.filter((m) => m.sender === "visitor").slice(-1)[0]?.body
                       )
-                    )}
-                  </div>
-                );
-              })()}
+                    }
+                    className="text-xs px-3 py-1.5 rounded-full border border-accent/50 text-accent hover:bg-accent/10"
+                  >
+                    Yes, connect me
+                  </button>
+                  <button
+                    type="button"
+                    onClick={showWelcome}
+                    className="text-xs px-3 py-1.5 rounded-full border border-white/20 text-muted hover:bg-white/5"
+                  >
+                    Back to menu
+                  </button>
+                </div>
+              )}
 
             <div ref={bottomRef} />
           </div>
