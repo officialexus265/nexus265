@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageCircle, X, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/lib/settings";
 
 type Msg = {
   id: string;
@@ -27,6 +28,13 @@ type BotNode = {
 };
 
 export function ChatWidget() {
+  const { settings } = useSettings();
+  const agentName = settings.agentName || "Alex";
+  const agentGender = settings.agentGender === "male" ? "male" : "female";
+  const agentAvatar =
+    agentGender === "male"
+      ? settings.agentAvatarMale
+      : settings.agentAvatarFemale;
   const [open, setOpen] = useState(false);
   const [botNodes, setBotNodes] = useState<BotNode[]>([]);
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
@@ -289,10 +297,24 @@ export function ChatWidget() {
         <div className="fixed bottom-24 right-6 z-50 w-[min(100vw-2rem,380px)] h-[520px] max-h-[75vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/10">
             <div>
-              <p className="font-semibold text-sm">nexus265 Assistant</p>
-              <p className="text-xs text-muted">
-                {humanMode ? "Live with developer" : "Guided help + live agent"}
-              </p>
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+                  {agentAvatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={agentAvatar} alt={agentName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-semibold text-indigo-200">
+                      {agentName.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{agentName}</p>
+                  <p className="text-xs text-muted">
+                    {humanMode ? "Live with developer" : "Assistant · online"}
+                  </p>
+                </div>
+              </div>
             </div>
             <button
               type="button"
@@ -308,15 +330,34 @@ export function ChatWidget() {
               <div
                 key={m.id}
                 className={cn(
-                  "max-w-[90%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap",
-                  m.sender === "visitor"
-                    ? "ml-auto bg-primary text-white"
-                    : m.sender === "admin"
-                      ? "bg-accent/20 text-foreground border border-accent/30"
-                      : "bg-white/5 text-foreground"
+                  "flex gap-2 max-w-[92%]",
+                  m.sender === "visitor" ? "ml-auto flex-row-reverse" : ""
                 )}
               >
-                {m.body}
+                {(m.sender === "bot" || m.sender === "admin") && (
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-primary/20 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                    {agentAvatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={agentAvatar} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-semibold text-indigo-200">
+                        {agentName.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    "rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap",
+                    m.sender === "visitor"
+                      ? "bg-primary text-white"
+                      : m.sender === "admin"
+                        ? "bg-accent/20 text-foreground border border-accent/30"
+                        : "bg-white/5 text-foreground"
+                  )}
+                >
+                  {m.body}
+                </div>
               </div>
             ))}
 
@@ -363,11 +404,23 @@ export function ChatWidget() {
               )}
 
             {isTyping && (
-              <div className="max-w-[90%] rounded-2xl px-4 py-3 bg-white/5 text-foreground inline-flex items-center gap-1.5">
-                <span className="sr-only">Bot is typing</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:300ms]" />
+              <div className="flex gap-2 items-end">
+                <div className="w-7 h-7 rounded-full overflow-hidden bg-primary/20 border border-primary/20 flex items-center justify-center shrink-0">
+                  {agentAvatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={agentAvatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-semibold text-indigo-200">
+                      {agentName.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="rounded-2xl px-4 py-3 bg-white/5 text-foreground inline-flex items-center gap-1.5">
+                  <span className="sr-only">{agentName} is typing</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:300ms]" />
+                </div>
               </div>
             )}
 

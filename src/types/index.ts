@@ -57,6 +57,10 @@ export interface SiteSettings {
   };
   slides: HeroSlide[];
   slideSpeedMs: number;
+  agentName: string;
+  agentGender: "male" | "female";
+  agentAvatarMale: string;
+  agentAvatarFemale: string;
 }
 
 export const defaultSlide1 = (): HeroSlide => ({
@@ -120,4 +124,8 @@ export const defaultSettings: SiteSettings = {
   },
   slides: [defaultSlide1(), defaultSlide2(), defaultSlide3()],
   slideSpeedMs: 7000,
+  agentName: "Alex",
+  agentGender: "female",
+  agentAvatarMale: "",
+  agentAvatarFemale: "",
 };

@@ -56,6 +56,10 @@ export async function PUT(req: NextRequest) {
         social: body.social || {},
         slides: body.slides || null,
         slideSpeedMs: body.slideSpeedMs ?? 7000,
+        agentName: body.agentName || "Alex",
+        agentGender: body.agentGender === "male" ? "male" : "female",
+        agentAvatarMale: body.agentAvatarMale || null,
+        agentAvatarFemale: body.agentAvatarFemale || null,
       },
       create: {
         id: "default",
@@ -70,6 +74,10 @@ export async function PUT(req: NextRequest) {
         social: body.social || {},
         slides: body.slides || null,
         slideSpeedMs: body.slideSpeedMs ?? 7000,
+        agentName: body.agentName || "Alex",
+        agentGender: body.agentGender === "male" ? "male" : "female",
+        agentAvatarMale: body.agentAvatarMale || null,
+        agentAvatarFemale: body.agentAvatarFemale || null,
       },
     });
 

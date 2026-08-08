@@ -563,6 +563,109 @@ export default function AdminSettingsPage() {
           ))}
         </section>
 
+
+        {/* Chat agent */}
+        <section className="bg-card border border-border rounded-2xl p-6 space-y-5">
+          <div>
+            <h2 className="font-semibold text-lg">Chat agent</h2>
+            <p className="text-sm text-muted mt-1">
+              Name, gender and profile photos shown in the live chat widget.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-muted mb-1.5">Agent name</label>
+              <input
+                value={form.agentName || ""}
+                onChange={(e) => setForm({ ...form, agentName: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none"
+                placeholder="e.g. Alex, Maya, Sam"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-muted mb-1.5">Gender</label>
+              <div className="flex gap-2">
+                {(["female", "male"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setForm({ ...form, agentGender: g })}
+                    className={`flex-1 py-3 rounded-xl border text-sm capitalize transition ${
+                      form.agentGender === g
+                        ? "border-primary bg-primary/20 text-white"
+                        : "border-border text-muted hover:text-white"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(
+              [
+                ["agentAvatarFemale", "Female profile photo", "female"],
+                ["agentAvatarMale", "Male profile photo", "male"],
+              ] as const
+            ).map(([field, label, g]) => (
+              <div key={field}>
+                <label className="block text-sm text-muted mb-1.5">{label}</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-background border border-border flex items-center justify-center shrink-0">
+                    {(form as Record<string, string>)[field] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={(form as Record<string, string>)[field]}
+                        alt={label}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted">{g === "female" ? "F" : "M"}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="btn-outline text-xs py-2 px-3 cursor-pointer inline-flex items-center gap-1">
+                      <Upload className="w-3.5 h-3.5" />
+                      Upload
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setUploading(true);
+                          try {
+                            const { url } = await uploadImage(file, `nexus265/agent-${g}`);
+                            setForm((prev) => ({ ...prev, [field]: url }));
+                          } catch (err) {
+                            alert(err instanceof Error ? err.message : "Upload failed");
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                      />
+                    </label>
+                    {(form as Record<string, string>)[field] && (
+                      <button
+                        type="button"
+                        onClick={() => setForm({ ...form, [field]: "" })}
+                        className="text-xs text-red-400 text-left"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {form.agentGender === g && (
+                  <p className="text-[11px] text-accent mt-1">Currently active</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Contact */}
         <section className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <h2 className="font-semibold text-lg">Contact details</h2>

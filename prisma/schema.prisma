@@ -46,6 +46,10 @@ model SiteSettings {
   social    Json     @default("{}")
   slides       Json?
   slideSpeedMs Int   @default(7000)
+  agentName          String  @default("Alex")
+  agentGender        String  @default("female")
+  agentAvatarMale    String?
+  agentAvatarFemale  String?
   updatedAt    DateTime @updatedAt
 }
 

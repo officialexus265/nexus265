@@ -40,6 +40,10 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
     social: { ...defaultSettings.social, ...social },
     slides: ensureSlides(raw.slides),
     slideSpeedMs: Number(raw.slideSpeedMs) || defaultSettings.slideSpeedMs,
+    agentName: (raw.agentName as string) || defaultSettings.agentName,
+    agentGender: (raw.agentGender as "male" | "female") === "male" ? "male" : "female",
+    agentAvatarMale: (raw.agentAvatarMale as string) || "",
+    agentAvatarFemale: (raw.agentAvatarFemale as string) || "",
   };
 }
 
