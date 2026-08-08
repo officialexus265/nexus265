@@ -36,7 +36,9 @@ export function ChatWidget() {
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
   const [busy, setBusy] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentNode = botNodes.find((n) => n.id === currentNodeId) || null;
   const currentOptions = currentNode?.options || [];
@@ -84,14 +86,36 @@ export function ChatWidget() {
   useEffect(() => {
     if (!open) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [messages, open, currentOptions]);
+  }, [messages, open, currentOptions, isTyping]);
+
+  /** Typing delay scales with response length (min ~0.6s, max ~3.5s) */
+  const typingDelayMs = (body: string) => {
+    const len = body.trim().length;
+    // ~28ms per character feels natural for reading/typing simulation
+    const ms = 600 + len * 28;
+    return Math.min(3500, Math.max(600, ms));
+  };
 
   const pushBot = (body: string, id?: string) => {
-    setMessages((m) => [
-      ...m,
-      { id: id || `bot-${Date.now()}`, sender: "bot", body },
-    ]);
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    setIsTyping(true);
+    const delay = typingDelayMs(body);
+    typingTimer.current = setTimeout(() => {
+      setIsTyping(false);
+      setMessages((m) => [
+        ...m,
+        { id: id || `bot-${Date.now()}`, sender: "bot", body },
+      ]);
+      typingTimer.current = null;
+    }, delay);
   };
+
+  // Cleanup typing timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimer.current) clearTimeout(typingTimer.current);
+    };
+  }, []);
 
   const pushVisitor = (body: string) => {
     setMessages((m) => [
@@ -102,18 +126,14 @@ export function ChatWidget() {
 
   const showWelcome = () => {
     const welcome = botNodes.find((n) => n.isWelcome) || botNodes[0];
+    setHumanMode(false);
+    setMessages([]);
     if (welcome) {
       setCurrentNodeId(welcome.id);
-      setHumanMode(false);
-      setMessages([{ id: welcome.id, sender: "bot", body: welcome.body }]);
+      pushBot(welcome.body, welcome.id);
     } else {
-      setMessages([
-        {
-          id: "welcome",
-          sender: "bot",
-          body: "Hi! Welcome to nexus265. How can I help you today?",
-        },
-      ]);
+      setCurrentNodeId(null);
+      pushBot("Hi! Welcome to nexus265. How can I help you today?", "welcome");
     }
   };
 
@@ -300,7 +320,7 @@ export function ChatWidget() {
               </div>
             ))}
 
-            {!humanMode && currentOptions.length > 0 && (
+            {!humanMode && !isTyping && currentOptions.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {currentOptions.map((opt) => (
                   <button
@@ -317,6 +337,7 @@ export function ChatWidget() {
             )}
 
             {!humanMode &&
+              !isTyping &&
               messages.some((m) => m.body.includes("don't have information")) && (
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -340,6 +361,15 @@ export function ChatWidget() {
                   </button>
                 </div>
               )}
+
+            {isTyping && (
+              <div className="max-w-[90%] rounded-2xl px-4 py-3 bg-white/5 text-foreground inline-flex items-center gap-1.5">
+                <span className="sr-only">Bot is typing</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-300 animate-bounce [animation-delay:300ms]" />
+              </div>
+            )}
 
             <div ref={bottomRef} />
           </div>
