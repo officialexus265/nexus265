@@ -31,13 +31,21 @@ type BotNode = {
 export function ChatWidget() {
   const { settings } = useSettings();
   const agentName = settings.agentName || "Alex";
-  const agentGender = settings.agentGender === "male" ? "male" : "female";
+  const [visitorGender, setVisitorGender] = useState<"male" | "female" | null>(null);
+  const [pickedAgent, setPickedAgent] = useState(false);
+  const effectiveGender =
+    visitorGender || (settings.agentGender === "male" ? "male" : "female");
   const agentAvatar =
-    agentGender === "male"
+    effectiveGender === "male"
       ? settings.agentAvatarMale
       : settings.agentAvatarFemale;
+  const canPickAgent =
+    settings.allowVisitorAgentPick !== false &&
+    !!(settings.agentAvatarMale && settings.agentAvatarFemale);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const genderRef = useRef(effectiveGender);
+  genderRef.current = effectiveGender;
   const [open, setOpen] = useState(false);
   const [botNodes, setBotNodes] = useState<BotNode[]>([]);
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
@@ -121,7 +129,7 @@ export function ChatWidget() {
       // Free browser TTS — only if enabled in settings
       const st = settingsRef.current;
       if (st.agentVoiceEnabled) {
-        speakAsAgent(body, st.agentGender === "male" ? "male" : "female");
+        speakAsAgent(body, genderRef.current);
       }
     }, delay);
   };
@@ -154,9 +162,11 @@ export function ChatWidget() {
   };
 
   useEffect(() => {
-    if (open && messages.length === 0 && botNodes.length > 0) showWelcome();
+    if (!open) return;
+    if (canPickAgent && !pickedAgent) return;
+    if (messages.length === 0 && botNodes.length > 0) showWelcome();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, botNodes]);
+  }, [open, botNodes, pickedAgent, canPickAgent]);
 
   const openChat = () => {
     setOpen(true);
@@ -354,6 +364,59 @@ export function ChatWidget() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            {open && canPickAgent && !pickedAgent && (
+              <div className="space-y-3 py-2">
+                <p className="text-sm text-center text-muted">
+                  Who would you like to chat with?
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {(
+                    [
+                      ["female", "Female", settings.agentAvatarFemale],
+                      ["male", "Male", settings.agentAvatarMale],
+                    ] as const
+                  ).map(([g, label, src]) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        setVisitorGender(g);
+                        setPickedAgent(true);
+                        setTimeout(() => showWelcome(), 50);
+                      }}
+                      className="flex flex-col items-center gap-2 p-3 rounded-2xl border border-border hover:border-primary/50 hover:bg-primary/10 transition"
+                    >
+                      <span className="w-16 h-16 rounded-full overflow-hidden border border-white/10 bg-primary/20">
+                        {src ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={src} alt={label} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="flex h-full items-center justify-center text-lg font-semibold">
+                            {label[0]}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-xs font-medium">{agentName}</span>
+                      <span className="text-[10px] text-muted">{label}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="w-full text-xs text-muted underline"
+                  onClick={() => {
+                    setPickedAgent(true);
+                    setTimeout(() => showWelcome(), 50);
+                  }}
+                >
+                  Continue with default
+                </button>
+              </div>
+            )}
+
+            {(pickedAgent || !canPickAgent) && (
+            <>
+
             {messages.map((m) => (
               <div
                 key={m.id}
@@ -453,6 +516,8 @@ export function ChatWidget() {
             )}
 
             <div ref={bottomRef} />
+            </>
+            )}
           </div>
 
           <div className="p-3 border-t border-border space-y-2">

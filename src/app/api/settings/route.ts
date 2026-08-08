@@ -61,6 +61,7 @@ export async function PUT(req: NextRequest) {
         agentAvatarMale: body.agentAvatarMale || null,
         agentAvatarFemale: body.agentAvatarFemale || null,
         agentVoiceEnabled: !!body.agentVoiceEnabled,
+        allowVisitorAgentPick: body.allowVisitorAgentPick !== false,
       },
       create: {
         id: "default",
@@ -80,6 +81,7 @@ export async function PUT(req: NextRequest) {
         agentAvatarMale: body.agentAvatarMale || null,
         agentAvatarFemale: body.agentAvatarFemale || null,
         agentVoiceEnabled: !!body.agentVoiceEnabled,
+        allowVisitorAgentPick: body.allowVisitorAgentPick !== false,
       },
     });
 

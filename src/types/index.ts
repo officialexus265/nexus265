@@ -62,6 +62,7 @@ export interface SiteSettings {
   agentAvatarMale: string;
   agentAvatarFemale: string;
   agentVoiceEnabled: boolean;
+  allowVisitorAgentPick: boolean;
 }
 
 export const defaultSlide1 = (): HeroSlide => ({
@@ -130,4 +131,5 @@ export const defaultSettings: SiteSettings = {
   agentAvatarMale: "",
   agentAvatarFemale: "",
   agentVoiceEnabled: false,
+  allowVisitorAgentPick: true,
 };

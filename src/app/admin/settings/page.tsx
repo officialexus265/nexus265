@@ -15,6 +15,11 @@ import {
   Upload,
   Image as ImageIcon,
   Trash2,
+  LayoutGrid,
+  Images,
+  Bot,
+  Share2,
+  Shield,
 } from "lucide-react";
 import { useSettings } from "@/lib/settings";
 import { uploadImage } from "@/lib/upload";
@@ -214,8 +219,35 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        {/* Branding */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-wrap gap-1 p-1 mb-6 rounded-2xl bg-card border border-border">
+          {(
+            [
+              ["branding", "Branding", LayoutGrid],
+              ["hero", "Hero slider", Images],
+              ["agent", "Chat agent", Bot],
+              ["contact", "Contact & social", Share2],
+              ["account", "Account", Shield],
+            ] as const
+          ).map(([id, label, Icon]) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setSettingsTab(id)}
+              className={`flex items-center gap-1.5 text-xs sm:text-sm px-3 py-2.5 rounded-xl transition flex-1 justify-center min-w-[100px] ${
+                settingsTab === id
+                  ? "bg-primary text-white shadow"
+                  : "text-muted hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-6">
+        {settingsTab === "branding" && (
         <section className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <h2 className="font-semibold text-lg flex items-center gap-2">
             <User className="w-5 h-5 text-accent" />
@@ -372,9 +404,9 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </section>
+        )}
 
-
-        {/* Hero slides */}
+        {settingsTab === "hero" && (
         <section className="bg-card border border-border rounded-2xl p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
             <div>
@@ -562,15 +594,20 @@ export default function AdminSettingsPage() {
             </div>
           ))}
         </section>
+        )}
 
-
-        {/* Chat agent */}
+        {settingsTab === "agent" && (
         <section className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <div>
             <h2 className="font-semibold text-lg">Chat agent</h2>
             <p className="text-sm text-muted mt-1">
-              Name, gender and profile photos shown in the live chat widget.
+              Configure the default assistant visitors see. Upload both faces so you (or visitors) can switch gender.
             </p>
+            <div className="mt-3 text-xs text-muted leading-relaxed space-y-1.5 p-3 rounded-xl bg-background border border-border">
+              <p><strong className="text-foreground">Name & default gender</strong> — used in the chat header and avatar.</p>
+              <p><strong className="text-foreground">Speak replies aloud</strong> — free browser text-to-speech (no paid API). When on, bot messages are read out in a male/female system voice matching gender.</p>
+              <p><strong className="text-foreground">Visitor choice</strong> — if both photos are uploaded, the chat widget can offer Male / Female before starting.</p>
+            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -606,7 +643,7 @@ export default function AdminSettingsPage() {
             <div>
               <p className="text-sm font-medium">Speak replies aloud</p>
               <p className="text-xs text-muted mt-0.5">
-                Free browser voice (no API cost). Uses a male or female voice matching gender.
+                Free browser voice (no API cost). Uses a male or female system voice matching gender. The visitor&apos;s device reads the bot text — no recording, no paid service.
               </p>
             </div>
             <button
@@ -623,6 +660,34 @@ export default function AdminSettingsPage() {
               <span
                 className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white transition ${
                   form.agentVoiceEnabled ? "translate-x-5" : ""
+                }`}
+              />
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-background border border-border">
+            <div>
+              <p className="text-sm font-medium">Let visitors choose male / female agent</p>
+              <p className="text-xs text-muted mt-0.5">
+                When both profile photos are uploaded, the chat asks who they want to talk to. Default gender still applies if they skip.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.allowVisitorAgentPick !== false}
+              onClick={() =>
+                setForm({
+                  ...form,
+                  allowVisitorAgentPick: form.allowVisitorAgentPick === false,
+                })
+              }
+              className={`relative w-12 h-7 rounded-full transition shrink-0 ${
+                form.allowVisitorAgentPick !== false ? "bg-primary" : "bg-white/10"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white transition ${
+                  form.allowVisitorAgentPick !== false ? "translate-x-5" : ""
                 }`}
               />
             </button>
@@ -703,8 +768,10 @@ export default function AdminSettingsPage() {
             ))}
           </div>
         </section>
+        )}
 
-        {/* Contact */}
+        {settingsTab === "contact" && (
+        <>
         <section className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <h2 className="font-semibold text-lg">Contact details</h2>
 
@@ -774,9 +841,11 @@ export default function AdminSettingsPage() {
             </div>
           ))}
         </section>
+        </>
+        )}
 
-
-        {/* Account security */}
+        {settingsTab === "account" && (
+        <>
         <section className="bg-card border border-border rounded-2xl p-6 space-y-5">
           <h2 className="font-semibold text-lg flex items-center gap-2">
             <Lock className="w-5 h-5 text-accent" />
@@ -802,8 +871,11 @@ export default function AdminSettingsPage() {
             Change them in Vercel → Project → Settings → Environment Variables.
           </p>
         </section>
+        </>
+        )}
 
-        <div className="flex items-center gap-4 pb-10">
+        {/* Save — always visible */}
+        <div className="sticky bottom-4 flex items-center gap-4 p-4 mt-6 rounded-2xl bg-card/95 border border-border backdrop-blur shadow-xl">
           <button onClick={handleSave} className="btn-primary">
             <Save className="w-4 h-4" />
             Save settings
@@ -811,6 +883,10 @@ export default function AdminSettingsPage() {
           {saved && (
             <span className="text-sm text-success">Saved — site updated</span>
           )}
+          <span className="text-xs text-muted ml-auto hidden sm:inline">
+            Tab: {settingsTab}
+          </span>
+        </div>
         </div>
       </div>
     </div>

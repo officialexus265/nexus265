@@ -51,6 +51,7 @@ model SiteSettings {
   agentAvatarMale    String?
   agentAvatarFemale  String?
   agentVoiceEnabled  Boolean @default(false)
+  allowVisitorAgentPick Boolean @default(true)
   updatedAt    DateTime @updatedAt
 }
 

@@ -45,6 +45,7 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
     agentAvatarMale: (raw.agentAvatarMale as string) || "",
     agentAvatarFemale: (raw.agentAvatarFemale as string) || "",
     agentVoiceEnabled: raw.agentVoiceEnabled === true || raw.agentVoiceEnabled === "true",
+    allowVisitorAgentPick: raw.allowVisitorAgentPick !== false && raw.allowVisitorAgentPick !== "false",
   };
 }
 
