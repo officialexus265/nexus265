@@ -30,13 +30,27 @@ type BotNode = {
 
 export function ChatWidget() {
   const { settings } = useSettings();
-  const agentName = settings.agentName || "Alex";
   const [visitorGender, setVisitorGender] = useState<"male" | "female" | null>(null);
   const [pickedAgent, setPickedAgent] = useState(false);
-  const effectiveGender =
+  const [open, setOpen] = useState(false);
+  const [botNodes, setBotNodes] = useState<BotNode[]>([]);
+  const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [humanMode, setHumanMode] = useState(false);
+
+  const effectiveGender: "male" | "female" =
     visitorGender || (settings.agentGender === "male" ? "male" : "female");
-  const agentAvatar =
-    effectiveGender === "male"
+  const agentNameFemale = settings.agentNameFemale || settings.agentName || "Maya";
+  const agentNameMale = settings.agentNameMale || settings.agentName || "Alex";
+  const agentNameHuman = settings.agentNameHuman || "Developer";
+  const agentName = humanMode
+    ? agentNameHuman
+    : effectiveGender === "male"
+      ? agentNameMale
+      : agentNameFemale;
+  const agentAvatar = humanMode
+    ? "" // neutral — no gendered face when live with developer
+    : effectiveGender === "male"
       ? settings.agentAvatarMale
       : settings.agentAvatarFemale;
   const canPickAgent =
@@ -46,11 +60,6 @@ export function ChatWidget() {
   settingsRef.current = settings;
   const genderRef = useRef(effectiveGender);
   genderRef.current = effectiveGender;
-  const [open, setOpen] = useState(false);
-  const [botNodes, setBotNodes] = useState<BotNode[]>([]);
-  const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [humanMode, setHumanMode] = useState(false);
   const [name, setName] = useState("");
   const [text, setText] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -346,7 +355,7 @@ export function ChatWidget() {
                 <div>
                   <p className="font-semibold text-sm">{agentName}</p>
                   <p className="text-xs text-muted">
-                    {humanMode ? "Live with developer" : "Assistant · online"}
+                    {humanMode ? "Live chat · neutral" : "Assistant · online"}
                   </p>
                 </div>
               </div>
@@ -372,8 +381,8 @@ export function ChatWidget() {
                 <div className="grid grid-cols-2 gap-3">
                   {(
                     [
-                      ["female", "Female", settings.agentAvatarFemale],
-                      ["male", "Male", settings.agentAvatarMale],
+                      ["female", agentNameFemale, settings.agentAvatarFemale],
+                      ["male", agentNameMale, settings.agentAvatarMale],
                     ] as const
                   ).map(([g, label, src]) => (
                     <button
@@ -396,8 +405,8 @@ export function ChatWidget() {
                           </span>
                         )}
                       </span>
-                      <span className="text-xs font-medium">{agentName}</span>
-                      <span className="text-[10px] text-muted">{label}</span>
+                      <span className="text-xs font-medium">{label}</span>
+                      <span className="text-[10px] text-muted capitalize">{g}</span>
                     </button>
                   ))}
                 </div>

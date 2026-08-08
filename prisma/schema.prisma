@@ -47,6 +47,9 @@ model SiteSettings {
   slides       Json?
   slideSpeedMs Int   @default(7000)
   agentName          String  @default("Alex")
+  agentNameFemale    String  @default("Maya")
+  agentNameMale      String  @default("Alex")
+  agentNameHuman     String  @default("Developer")
   agentGender        String  @default("female")
   agentAvatarMale    String?
   agentAvatarFemale  String?

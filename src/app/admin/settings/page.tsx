@@ -614,16 +614,51 @@ export default function AdminSettingsPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-muted mb-1.5">Agent name</label>
+              <label className="block text-sm text-muted mb-1.5">Female agent name</label>
               <input
-                value={form.agentName || ""}
-                onChange={(e) => setForm({ ...form, agentName: e.target.value })}
+                value={form.agentNameFemale || form.agentName || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    agentNameFemale: e.target.value,
+                    agentName: form.agentGender === "female" ? e.target.value : form.agentName,
+                  })
+                }
                 className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none"
-                placeholder="e.g. Alex, Maya, Sam"
+                placeholder="e.g. Maya"
               />
             </div>
             <div>
-              <label className="block text-sm text-muted mb-1.5">Gender</label>
+              <label className="block text-sm text-muted mb-1.5">Male agent name</label>
+              <input
+                value={form.agentNameMale || form.agentName || ""}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    agentNameMale: e.target.value,
+                    agentName: form.agentGender === "male" ? e.target.value : form.agentName,
+                  })
+                }
+                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none"
+                placeholder="e.g. Alex"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm text-muted mb-1.5">
+                Name when talking to developer (neutral)
+              </label>
+              <input
+                value={form.agentNameHuman || "Developer"}
+                onChange={(e) => setForm({ ...form, agentNameHuman: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary outline-none"
+                placeholder="Developer"
+              />
+              <p className="text-xs text-muted mt-1">
+                Shown after the visitor chooses &quot;Talk to a human agent&quot; — not male/female branded.
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm text-muted mb-1.5">Default gender (if visitor doesn&apos;t pick)</label>
               <div className="flex gap-2">
                 {(["female", "male"] as const).map((g) => (
                   <button

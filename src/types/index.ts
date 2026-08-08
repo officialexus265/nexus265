@@ -57,7 +57,10 @@ export interface SiteSettings {
   };
   slides: HeroSlide[];
   slideSpeedMs: number;
-  agentName: string;
+  agentName: string; // legacy / neutral fallback
+  agentNameFemale: string;
+  agentNameMale: string;
+  agentNameHuman: string; // when talking to developer
   agentGender: "male" | "female";
   agentAvatarMale: string;
   agentAvatarFemale: string;
@@ -127,6 +130,9 @@ export const defaultSettings: SiteSettings = {
   slides: [defaultSlide1(), defaultSlide2(), defaultSlide3()],
   slideSpeedMs: 7000,
   agentName: "Alex",
+  agentNameFemale: "Maya",
+  agentNameMale: "Alex",
+  agentNameHuman: "Developer",
   agentGender: "female",
   agentAvatarMale: "",
   agentAvatarFemale: "",
