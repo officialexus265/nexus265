@@ -119,6 +119,9 @@ export default function AdminSettingsPage() {
   const [saved, setSaved] = useState(false);
   const { settings, update } = useSettings();
   const [form, setForm] = useState<SiteSettings>(defaultSettings);
+  const [settingsTab, setSettingsTab] = useState<
+    "branding" | "hero" | "agent" | "contact" | "account"
+  >("branding");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
 
