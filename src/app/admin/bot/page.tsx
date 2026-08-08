@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ReactFlow,
@@ -28,6 +28,8 @@ import {
   ExternalLink,
   UserRound,
   Languages,
+  ListTree,
+  Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +42,16 @@ type BotOption = {
   sortOrder?: number;
 };
 
+type FlowNode = {
+  id: string;
+  title: string;
+  body: string;
+  isWelcome: boolean;
+  positionX: number;
+  positionY: number;
+  options: BotOption[];
+};
+
 type BotNodeData = {
   title: string;
   body: string;
@@ -49,6 +61,8 @@ type BotNodeData = {
   onDelete?: (id: string) => void;
   onAddOption?: (id: string) => void;
 };
+
+type EditorMode = "list" | "flow";
 
 function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -98,7 +112,10 @@ function MessageNode({ id, data, selected }: NodeProps) {
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase tracking-wide text-muted">Options</p>
           {(d.options || []).map((opt, i) => (
-            <div key={opt.id} className="relative border border-border/60 rounded-lg p-2 space-y-1 bg-background/50">
+            <div
+              key={opt.id}
+              className="relative border border-border/60 rounded-lg p-2 space-y-1 bg-background/50"
+            >
               <input
                 value={opt.label}
                 onChange={(e) => {
@@ -144,7 +161,9 @@ function MessageNode({ id, data, selected }: NodeProps) {
                   {(opt.action === "url" || opt.action === "next_url") && (
                     <ExternalLink className="w-3 h-3" />
                   )}
-                  {opt.action === "next" || opt.action === "next_url" ? "Drag handle →" : ""}
+                  {opt.action === "next" || opt.action === "next_url"
+                    ? "Drag handle →"
+                    : ""}
                 </span>
                 <button
                   type="button"
@@ -177,7 +196,6 @@ function MessageNode({ id, data, selected }: NodeProps) {
           </button>
         </div>
       </div>
-      {/* default source for nodes with no option handles */}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -191,18 +209,48 @@ function MessageNode({ id, data, selected }: NodeProps) {
 const nodeTypes = { message: MessageNode };
 
 export default function BotTrainerPage() {
+  const [mode, setMode] = useState<EditorMode>("list");
+  const [flowData, setFlowData] = useState<FlowNode[]>([]);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [loaded, setLoaded] = useState(false);
 
+  // Persist mode preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("nexus265_bot_editor_mode") as EditorMode | null;
+      if (saved === "list" || saved === "flow") setMode(saved);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const setModePersist = (m: EditorMode) => {
+    setMode(m);
+    try {
+      localStorage.setItem("nexus265_bot_editor_mode", m);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const patchNode = useCallback(
     (id: string, patch: Partial<BotNodeData>) => {
       setNodes((nds) =>
-        nds.map((n) =>
-          n.id === id ? { ...n, data: { ...n.data, ...patch } } : n
-        )
+        nds.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
+      );
+      setFlowData((list) =>
+        list.map((n) => {
+          if (n.id !== id) return n;
+          return {
+            ...n,
+            title: patch.title !== undefined ? patch.title : n.title,
+            body: patch.body !== undefined ? patch.body : n.body,
+            options: patch.options !== undefined ? patch.options : n.options,
+          };
+        })
       );
     },
     [setNodes]
@@ -210,27 +258,35 @@ export default function BotTrainerPage() {
 
   const deleteNode = useCallback(
     (id: string) => {
-      setNodes((nds) => nds.filter((n) => n.id !== id || (n.data as BotNodeData).isWelcome));
+      setNodes((nds) =>
+        nds.filter((n) => n.id !== id || (n.data as BotNodeData).isWelcome)
+      );
       setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+      setFlowData((list) => list.filter((n) => n.id !== id || n.isWelcome));
     },
     [setNodes, setEdges]
   );
 
   const addOption = useCallback(
     (id: string) => {
+      const opt: BotOption = {
+        id: uid("opt"),
+        label: "New option",
+        action: "next",
+        nextNodeId: null,
+        url: "",
+      };
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id !== id) return n;
           const data = n.data as BotNodeData;
-          const opt: BotOption = {
-            id: uid("opt"),
-            label: "New option",
-            action: "next",
-            nextNodeId: null,
-            url: "",
-          };
           return { ...n, data: { ...data, options: [...(data.options || []), opt] } };
         })
+      );
+      setFlowData((list) =>
+        list.map((n) =>
+          n.id === id ? { ...n, options: [...(n.options || []), opt] } : n
+        )
       );
     },
     [setNodes]
@@ -250,10 +306,47 @@ export default function BotTrainerPage() {
     [patchNode, deleteNode, addOption]
   );
 
+  const applyGraphFromFlowData = useCallback(
+    (dataNodes: FlowNode[]) => {
+      const graphNodes: Node[] = dataNodes.map((n) => ({
+        id: n.id,
+        type: "message",
+        position: { x: n.positionX || 0, y: n.positionY || 0 },
+        data: {
+          title: n.title,
+          body: n.body,
+          isWelcome: n.isWelcome,
+          options: n.options || [],
+        },
+      }));
+
+      const graphEdges: Edge[] = [];
+      for (const n of dataNodes) {
+        for (const o of n.options || []) {
+          if (o.nextNodeId && (o.action === "next" || o.action === "next_url")) {
+            graphEdges.push({
+              id: `e-${o.id}`,
+              source: n.id,
+              target: o.nextNodeId,
+              sourceHandle: o.id,
+              label: o.label,
+              markerEnd: { type: MarkerType.ArrowClosed },
+              style: { stroke: "#6366f1" },
+            });
+          }
+        }
+      }
+
+      setNodes(bindHandlers(graphNodes));
+      setEdges(graphEdges);
+    },
+    [bindHandlers, setNodes, setEdges]
+  );
+
   const load = useCallback(async () => {
     const res = await fetch("/api/bot/flow");
     const data = await res.json();
-    const graphNodes: Node[] = (data.nodes || []).map(
+    const dataNodes: FlowNode[] = (data.nodes || []).map(
       (n: {
         id: string;
         title: string;
@@ -264,64 +357,74 @@ export default function BotTrainerPage() {
         options: BotOption[];
       }) => ({
         id: n.id,
-        type: "message",
-        position: { x: n.positionX || 0, y: n.positionY || 0 },
-        data: {
-          title: n.title,
-          body: n.body,
-          isWelcome: n.isWelcome,
-          options: n.options || [],
-        },
+        title: n.title,
+        body: n.body,
+        isWelcome: n.isWelcome,
+        positionX: n.positionX || 0,
+        positionY: n.positionY || 0,
+        options: n.options || [],
       })
     );
-
-    const graphEdges: Edge[] = [];
-    for (const n of data.nodes || []) {
-      for (const o of n.options || []) {
-        if (o.nextNodeId && (o.action === "next" || o.action === "next_url")) {
-          graphEdges.push({
-            id: `e-${o.id}`,
-            source: n.id,
-            target: o.nextNodeId,
-            sourceHandle: o.id,
-            label: o.label,
-            markerEnd: { type: MarkerType.ArrowClosed },
-            style: { stroke: "#6366f1" },
-          });
-        }
-      }
-    }
-
-    setNodes(bindHandlers(graphNodes));
-    setEdges(graphEdges);
+    setFlowData(dataNodes);
+    applyGraphFromFlowData(dataNodes);
     setLoaded(true);
-  }, [bindHandlers, setNodes, setEdges]);
+  }, [applyGraphFromFlowData]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  // Re-bind handlers when nodes change from React Flow internals
+  // When switching to flow, rebuild canvas from flowData + current RF positions if any
   useEffect(() => {
-    if (!loaded) return;
-    setNodes((nds) => bindHandlers(nds));
+    if (!loaded || mode !== "flow") return;
+    // Merge positions from existing RF nodes when possible
+    const merged = flowData.map((n) => {
+      const existing = nodes.find((x) => x.id === n.id);
+      return existing
+        ? { ...n, positionX: existing.position.x, positionY: existing.position.y }
+        : n;
+    });
+    applyGraphFromFlowData(merged);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
+  }, [mode]);
 
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target || !connection.sourceHandle) return;
-      // Update option nextNodeId
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id !== connection.source) return n;
           const data = n.data as BotNodeData;
           const options = data.options.map((o) =>
             o.id === connection.sourceHandle
-              ? { ...o, nextNodeId: connection.target, action: o.action === "url" ? "next_url" : o.action === "human" ? "human" : o.action }
+              ? {
+                  ...o,
+                  nextNodeId: connection.target,
+                  action:
+                    o.action === "url"
+                      ? "next_url"
+                      : o.action === "human"
+                        ? "human"
+                        : o.action === "next_url"
+                          ? "next_url"
+                          : "next",
+                }
               : o
           );
           return { ...n, data: { ...data, options } };
+        })
+      );
+      setFlowData((list) =>
+        list.map((n) => {
+          if (n.id !== connection.source) return n;
+          return {
+            ...n,
+            options: n.options.map((o) =>
+              o.id === connection.sourceHandle
+                ? { ...o, nextNodeId: connection.target }
+                : o
+            ),
+          };
         })
       );
       setEdges((eds) =>
@@ -341,49 +444,91 @@ export default function BotTrainerPage() {
 
   const addMessage = () => {
     const id = uid("node");
-    const node: Node = {
+    const node: FlowNode = {
       id,
-      type: "message",
-      position: { x: 120 + Math.random() * 200, y: 180 + Math.random() * 160 },
-      data: {
-        title: "New message",
-        body: "",
-        isWelcome: false,
-        options: [],
-        onChange: patchNode,
-        onDelete: deleteNode,
-        onAddOption: addOption,
-      },
+      title: "New message",
+      body: "",
+      isWelcome: false,
+      positionX: 120 + Math.random() * 200,
+      positionY: 180 + Math.random() * 160,
+      options: [],
     };
-    setNodes((nds) => [...nds, node]);
+    setFlowData((list) => [...list, node]);
+    setNodes((nds) => [
+      ...nds,
+      {
+        id,
+        type: "message",
+        position: { x: node.positionX, y: node.positionY },
+        data: {
+          title: node.title,
+          body: node.body,
+          isWelcome: false,
+          options: [],
+          onChange: patchNode,
+          onDelete: deleteNode,
+          onAddOption: addOption,
+        },
+      },
+    ]);
+  };
+
+  const updateListNode = (id: string, patch: Partial<FlowNode>) => {
+    setFlowData((list) => list.map((n) => (n.id === id ? { ...n, ...patch } : n)));
+  };
+
+  const updateListOption = (nodeId: string, optIndex: number, patch: Partial<BotOption>) => {
+    setFlowData((list) =>
+      list.map((n) => {
+        if (n.id !== nodeId) return n;
+        const options = [...n.options];
+        options[optIndex] = { ...options[optIndex], ...patch };
+        return { ...n, options };
+      })
+    );
+  };
+
+  const collectPayload = () => {
+    // Prefer RF positions when available
+    return flowData.map((n) => {
+      const rf = nodes.find((x) => x.id === n.id);
+      const data = rf ? (rf.data as BotNodeData) : null;
+      const options = (data?.options || n.options || []).map((o) => {
+        const edge = edges.find((e) => e.source === n.id && e.sourceHandle === o.id);
+        return {
+          ...o,
+          nextNodeId: edge?.target || o.nextNodeId || null,
+        };
+      });
+      return {
+        id: n.id,
+        title: data?.title ?? n.title,
+        body: data?.body ?? n.body,
+        isWelcome: n.isWelcome,
+        positionX: rf?.position.x ?? n.positionX,
+        positionY: rf?.position.y ?? n.positionY,
+        options,
+      };
+    });
   };
 
   const save = async () => {
     setSaving(true);
     setMsg("");
     try {
-      const payload = {
-        nodes: nodes.map((n) => {
-          const d = n.data as BotNodeData;
-          // sync nextNodeId from edges
-          const options = (d.options || []).map((o) => {
-            const edge = edges.find((e) => e.source === n.id && e.sourceHandle === o.id);
-            return {
-              ...o,
-              nextNodeId: edge?.target || o.nextNodeId || null,
-            };
-          });
-          return {
-            id: n.id,
-            title: d.title,
-            body: d.body,
-            isWelcome: !!d.isWelcome,
-            positionX: n.position.x,
-            positionY: n.position.y,
-            options,
-          };
-        }),
-      };
+      const payload = { nodes: collectPayload() };
+      // Keep flowData in sync before save
+      setFlowData(
+        payload.nodes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          body: n.body,
+          isWelcome: !!n.isWelcome,
+          positionX: n.positionX,
+          positionY: n.positionY,
+          options: n.options,
+        }))
+      );
       const res = await fetch("/api/bot/flow", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -413,9 +558,40 @@ export default function BotTrainerPage() {
             Train bot
           </h1>
           <p className="text-xs text-muted">
-            Visual flow — welcome message → options → responses. Drag handles to connect.
+            Welcome → options → responses. Switch editor style anytime.
           </p>
         </div>
+
+        {/* Mode switch */}
+        <div className="flex rounded-xl border border-border p-0.5 bg-background">
+          <button
+            type="button"
+            onClick={() => setModePersist("list")}
+            className={cn(
+              "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition",
+              mode === "list"
+                ? "bg-primary text-white"
+                : "text-muted hover:text-white"
+            )}
+          >
+            <ListTree className="w-3.5 h-3.5" />
+            List / tree
+          </button>
+          <button
+            type="button"
+            onClick={() => setModePersist("flow")}
+            className={cn(
+              "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition",
+              mode === "flow"
+                ? "bg-primary text-white"
+                : "text-muted hover:text-white"
+            )}
+          >
+            <Workflow className="w-3.5 h-3.5" />
+            Flowchart
+          </button>
+        </div>
+
         <div className="ml-auto flex flex-wrap gap-2">
           <Link href="/admin/bot/translations" className="btn-outline text-xs py-2 px-3">
             <Languages className="w-4 h-4" />
@@ -439,39 +615,186 @@ export default function BotTrainerPage() {
           </button>
         </div>
       </div>
+
       {msg && (
         <div className="px-4 py-2 text-xs border-b border-border bg-primary/10 text-indigo-200">
           {msg}
         </div>
       )}
-      <div className="flex-1 min-h-0">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-          colorMode="dark"
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background gap={18} size={1} color="#ffffff10" />
-          <Controls />
-          <MiniMap
-            nodeColor={(n) => ((n.data as BotNodeData).isWelcome ? "#22d3ee" : "#6366f1")}
-            maskColor="#0a0a12cc"
-          />
-        </ReactFlow>
-      </div>
-      <div className="border-t border-border px-4 py-2 text-[11px] text-muted shrink-0 flex flex-wrap gap-4">
-        <span>
-          <strong className="text-accent">Welcome</strong> is the first message
-        </span>
-        <span>Add options on a card → choose action → drag the handle to the next message</span>
-        <span>Open page: set path like <code className="text-indigo-300">/selling</code></span>
-        <span>Human agent: connects to live chat</span>
-      </div>
+
+      {mode === "flow" ? (
+        <>
+          <div className="flex-1 min-h-0">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              nodeTypes={nodeTypes}
+              fitView
+              colorMode="dark"
+              proOptions={{ hideAttribution: true }}
+            >
+              <Background gap={18} size={1} color="#ffffff10" />
+              <Controls />
+              <MiniMap
+                nodeColor={(n) =>
+                  (n.data as BotNodeData).isWelcome ? "#22d3ee" : "#6366f1"
+                }
+                maskColor="#0a0a12cc"
+              />
+            </ReactFlow>
+          </div>
+          <div className="border-t border-border px-4 py-2 text-[11px] text-muted shrink-0 flex flex-wrap gap-4">
+            <span>
+              <strong className="text-accent">Welcome</strong> is the first message
+            </span>
+            <span>Add options → choose action → drag handle to next message</span>
+            <span>
+              Page path e.g. <code className="text-indigo-300">/selling</code>
+            </span>
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+            <p className="text-xs text-muted">
+              Simple list editor. Same data as the flowchart — switch modes anytime, then Save.
+            </p>
+            {flowData.map((n) => (
+              <div
+                key={n.id}
+                className={cn(
+                  "bg-card border rounded-2xl p-4 space-y-3",
+                  n.isWelcome ? "border-accent/50" : "border-border"
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-accent">
+                    {n.isWelcome ? "Welcome (entry)" : n.title || "Message"}
+                  </span>
+                  {!n.isWelcome && (
+                    <button
+                      type="button"
+                      onClick={() => deleteNode(n.id)}
+                      className="text-xs text-red-400 flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Delete
+                    </button>
+                  )}
+                </div>
+                {!n.isWelcome && (
+                  <input
+                    value={n.title}
+                    onChange={(e) => updateListNode(n.id, { title: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary"
+                    placeholder="Admin title"
+                  />
+                )}
+                <textarea
+                  value={n.body}
+                  onChange={(e) => updateListNode(n.id, { body: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border text-sm outline-none focus:border-primary resize-none"
+                  placeholder="Bot message..."
+                />
+                <div className="space-y-2">
+                  <p className="text-xs text-muted font-medium">Options</p>
+                  {n.options.map((opt, i) => (
+                    <div
+                      key={opt.id}
+                      className="border border-border rounded-xl p-3 space-y-2 bg-background/40"
+                    >
+                      <input
+                        value={opt.label}
+                        onChange={(e) =>
+                          updateListOption(n.id, i, { label: e.target.value })
+                        }
+                        className="w-full px-2 py-1.5 rounded-lg bg-card border border-border text-sm outline-none"
+                        placeholder="Button label"
+                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <select
+                          value={opt.action}
+                          onChange={(e) =>
+                            updateListOption(n.id, i, {
+                              action: e.target.value as BotOption["action"],
+                            })
+                          }
+                          className="px-2 py-1.5 rounded-lg bg-card border border-border text-sm outline-none"
+                        >
+                          <option value="next">Go to next message</option>
+                          <option value="url">Open website page</option>
+                          <option value="human">Talk to human agent</option>
+                          <option value="next_url">Next message + page link</option>
+                        </select>
+                        {(opt.action === "next" || opt.action === "next_url") && (
+                          <select
+                            value={opt.nextNodeId || ""}
+                            onChange={(e) =>
+                              updateListOption(n.id, i, {
+                                nextNodeId: e.target.value || null,
+                              })
+                            }
+                            className="px-2 py-1.5 rounded-lg bg-card border border-border text-sm outline-none"
+                          >
+                            <option value="">— Select next message —</option>
+                            {flowData
+                              .filter((x) => x.id !== n.id)
+                              .map((x) => (
+                                <option key={x.id} value={x.id}>
+                                  {x.isWelcome ? "Welcome" : x.title || x.id}
+                                </option>
+                              ))}
+                          </select>
+                        )}
+                      </div>
+                      {(opt.action === "url" || opt.action === "next_url") && (
+                        <input
+                          value={opt.url || ""}
+                          onChange={(e) =>
+                            updateListOption(n.id, i, { url: e.target.value })
+                          }
+                          className="w-full px-2 py-1.5 rounded-lg bg-card border border-border text-sm outline-none"
+                          placeholder="/selling or https://..."
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateListNode(n.id, {
+                            options: n.options.filter((_, j) => j !== i),
+                          })
+                        }
+                        className="text-xs text-red-400"
+                      >
+                        Remove option
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addOption(n.id)}
+                    className="text-xs px-3 py-2 rounded-lg border border-dashed border-border text-muted hover:text-white w-full"
+                  >
+                    + Add option
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addMessage}
+              className="w-full btn-outline text-sm justify-center py-3"
+            >
+              <Plus className="w-4 h-4" />
+              Add message
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
