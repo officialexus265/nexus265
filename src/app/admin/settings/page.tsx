@@ -630,18 +630,28 @@ export default function AdminSettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {(
               [
-                ["agentAvatarFemale", "Female profile photo", "female"],
-                ["agentAvatarMale", "Male profile photo", "male"],
-              ] as const
-            ).map(([field, label, g]) => (
+                {
+                  field: "agentAvatarFemale" as const,
+                  label: "Female profile photo",
+                  g: "female" as const,
+                  url: form.agentAvatarFemale || "",
+                },
+                {
+                  field: "agentAvatarMale" as const,
+                  label: "Male profile photo",
+                  g: "male" as const,
+                  url: form.agentAvatarMale || "",
+                },
+              ]
+            ).map(({ field, label, g, url }) => (
               <div key={field}>
                 <label className="block text-sm text-muted mb-1.5">{label}</label>
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-full overflow-hidden bg-background border border-border flex items-center justify-center shrink-0">
-                    {(form as Record<string, string>)[field] ? (
+                    {url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={(form as Record<string, string>)[field]}
+                        src={url}
                         alt={label}
                         className="w-full h-full object-cover"
                       />
@@ -662,8 +672,11 @@ export default function AdminSettingsPage() {
                           if (!file) return;
                           setUploading(true);
                           try {
-                            const { url } = await uploadImage(file, `nexus265/agent-${g}`);
-                            setForm((prev) => ({ ...prev, [field]: url }));
+                            const { url: uploaded } = await uploadImage(
+                              file,
+                              `nexus265/agent-${g}`
+                            );
+                            setForm((prev) => ({ ...prev, [field]: uploaded }));
                           } catch (err) {
                             alert(err instanceof Error ? err.message : "Upload failed");
                           } finally {
@@ -672,7 +685,7 @@ export default function AdminSettingsPage() {
                         }}
                       />
                     </label>
-                    {(form as Record<string, string>)[field] && (
+                    {url && (
                       <button
                         type="button"
                         onClick={() => setForm({ ...form, [field]: "" })}
