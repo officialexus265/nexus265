@@ -72,6 +72,15 @@ function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function normalizeAction(action: string): BotOption["action"] {
+  if (action === "url") return "next_url";
+  if (action === "human") return "human";
+  if (action === "next_url") return "next_url";
+  if (action === "next") return "next";
+  return "next";
+}
+
+
 type MessageFlowNode = Node<BotNodeData, "message">;
 
 function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
@@ -478,22 +487,19 @@ export default function BotTrainerPage() {
         nds.map((n) => {
           if (n.id !== connection.source) return n;
           const data = n.data as BotNodeData;
-          const options = data.options.map((o) =>
-            o.id === connection.sourceHandle
-              ? {
-                  ...o,
-                  nextNodeId: connection.target,
-                  action:
-                    o.action === "url"
-                      ? "next_url"
-                      : o.action === "human"
-                        ? "human"
-                        : o.action === "next_url"
-                          ? "next_url"
-                          : "next",
-                }
-              : o
-          );
+          const options: BotOption[] = data.options.map((o) => {
+            if (o.id !== connection.sourceHandle) return o;
+            let action: BotOption["action"] = "next";
+            if (o.action === "url") action = "next_url";
+            else if (o.action === "human") action = "human";
+            else if (o.action === "next_url") action = "next_url";
+            else action = "next";
+            return {
+              ...o,
+              nextNodeId: connection.target,
+              action,
+            };
+          });
           return { ...n, data: { ...data, options } };
         })
       );
