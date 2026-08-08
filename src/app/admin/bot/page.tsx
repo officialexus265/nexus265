@@ -426,12 +426,11 @@ export default function BotTrainerPage() {
                   ? {
                       ...o,
                       nextNodeId: id,
-                      action:
-                        o.action === "url"
-                          ? "next_url"
-                          : o.action === "human"
-                            ? "human"
-                            : "next",
+                      action: (o.action === "url"
+                        ? "next_url"
+                        : o.action === "human"
+                          ? "human"
+                          : "next") as BotOption["action"],
                     }
                   : o
               ),
@@ -874,12 +873,11 @@ export default function BotTrainerPage() {
                                   options[i] = {
                                     ...options[i],
                                     nextNodeId: id,
-                                    action:
-                                      options[i].action === "url"
-                                        ? "next_url"
-                                        : options[i].action === "human"
-                                          ? "human"
-                                          : "next",
+                                    action: (options[i].action === "url"
+                                      ? "next_url"
+                                      : options[i].action === "human"
+                                        ? "human"
+                                        : "next") as BotOption["action"],
                                   };
                                   return { ...x, options };
                                 });

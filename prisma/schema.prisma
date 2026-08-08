@@ -50,6 +50,7 @@ model SiteSettings {
   agentGender        String  @default("female")
   agentAvatarMale    String?
   agentAvatarFemale  String?
+  agentVoiceEnabled  Boolean @default(false)
   updatedAt    DateTime @updatedAt
 }
 

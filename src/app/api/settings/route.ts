@@ -60,6 +60,7 @@ export async function PUT(req: NextRequest) {
         agentGender: body.agentGender === "male" ? "male" : "female",
         agentAvatarMale: body.agentAvatarMale || null,
         agentAvatarFemale: body.agentAvatarFemale || null,
+        agentVoiceEnabled: !!body.agentVoiceEnabled,
       },
       create: {
         id: "default",
@@ -78,6 +79,7 @@ export async function PUT(req: NextRequest) {
         agentGender: body.agentGender === "male" ? "male" : "female",
         agentAvatarMale: body.agentAvatarMale || null,
         agentAvatarFemale: body.agentAvatarFemale || null,
+        agentVoiceEnabled: !!body.agentVoiceEnabled,
       },
     });
 

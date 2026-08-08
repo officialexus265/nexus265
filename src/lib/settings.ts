@@ -44,6 +44,7 @@ function normalize(raw: Record<string, unknown>): SiteSettings {
     agentGender: (raw.agentGender as "male" | "female") === "male" ? "male" : "female",
     agentAvatarMale: (raw.agentAvatarMale as string) || "",
     agentAvatarFemale: (raw.agentAvatarFemale as string) || "",
+    agentVoiceEnabled: raw.agentVoiceEnabled === true || raw.agentVoiceEnabled === "true",
   };
 }
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MessageCircle, X, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettings } from "@/lib/settings";
+import { speakAsAgent, stopAgentVoice } from "@/lib/agent-voice";
 
 type Msg = {
   id: string;
@@ -35,6 +36,8 @@ export function ChatWidget() {
     agentGender === "male"
       ? settings.agentAvatarMale
       : settings.agentAvatarFemale;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
   const [open, setOpen] = useState(false);
   const [botNodes, setBotNodes] = useState<BotNode[]>([]);
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
@@ -115,6 +118,11 @@ export function ChatWidget() {
         { id: id || `bot-${Date.now()}`, sender: "bot", body },
       ]);
       typingTimer.current = null;
+      // Free browser TTS — only if enabled in settings
+      const st = settingsRef.current;
+      if (st.agentVoiceEnabled) {
+        speakAsAgent(body, st.agentGender === "male" ? "male" : "female");
+      }
     }, delay);
   };
 
@@ -284,14 +292,31 @@ export function ChatWidget() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openChat}
-        className="fixed bottom-6 right-6 z-40 btn-accent shadow-lg rounded-full w-14 h-14 justify-center p-0"
-        aria-label="Open chat"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
+      {!open && (
+        <button
+          type="button"
+          onClick={openChat}
+          className="fixed bottom-6 right-6 z-40 group flex items-center gap-0 rounded-full shadow-2xl shadow-indigo-500/25 border border-white/10 bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 text-white transition-all duration-300 hover:scale-[1.03] hover:shadow-indigo-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label={`Chat with ${agentName}`}
+        >
+          <span className="relative flex h-14 w-14 items-center justify-center">
+            {agentAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={agentAvatar}
+                alt=""
+                className="h-14 w-14 rounded-full object-cover ring-2 ring-white/30"
+              />
+            ) : (
+              <MessageCircle className="h-6 w-6" strokeWidth={2.25} />
+            )}
+            <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-indigo-600" />
+          </span>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap pr-0 text-sm font-medium opacity-0 transition-all duration-300 group-hover:max-w-[140px] group-hover:pr-4 group-hover:opacity-100">
+            Chat with {agentName}
+          </span>
+        </button>
+      )}
 
       {open && (
         <div className="fixed bottom-24 right-6 z-50 w-[min(100vw-2rem,380px)] h-[520px] max-h-[75vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
@@ -318,7 +343,10 @@ export function ChatWidget() {
             </div>
             <button
               type="button"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                stopAgentVoice();
+                setOpen(false);
+              }}
               className="p-1 text-muted hover:text-white"
             >
               <X className="w-5 h-5" />

@@ -602,6 +602,31 @@ export default function AdminSettingsPage() {
               </div>
             </div>
           </div>
+          <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-background border border-border">
+            <div>
+              <p className="text-sm font-medium">Speak replies aloud</p>
+              <p className="text-xs text-muted mt-0.5">
+                Free browser voice (no API cost). Uses a male or female voice matching gender.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!form.agentVoiceEnabled}
+              onClick={() =>
+                setForm({ ...form, agentVoiceEnabled: !form.agentVoiceEnabled })
+              }
+              className={`relative w-12 h-7 rounded-full transition shrink-0 ${
+                form.agentVoiceEnabled ? "bg-primary" : "bg-white/10"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white transition ${
+                  form.agentVoiceEnabled ? "translate-x-5" : ""
+                }`}
+              />
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {(
               [
