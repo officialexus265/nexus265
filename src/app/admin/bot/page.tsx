@@ -32,6 +32,10 @@ import {
   Workflow,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  suggestResponseFromOption,
+  suggestTitleFromOption,
+} from "@/lib/bot-suggest";
 
 type BotOption = {
   id: string;
@@ -155,7 +159,7 @@ function MessageNode({ id, data, selected }: NodeProps) {
                   placeholder="/selling or /contact#hire"
                 />
               )}
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-1 flex-wrap">
                 <span className="text-[10px] text-muted flex items-center gap-1">
                   {opt.action === "human" && <UserRound className="w-3 h-3" />}
                   {(opt.action === "url" || opt.action === "next_url") && (
@@ -165,16 +169,33 @@ function MessageNode({ id, data, selected }: NodeProps) {
                     ? "Drag handle →"
                     : ""}
                 </span>
-                <button
-                  type="button"
-                  className="text-[10px] text-red-400"
-                  onClick={() => {
-                    const options = d.options.filter((_, j) => j !== i);
-                    d.onChange?.(id, { options });
-                  }}
-                >
-                  Remove
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    className="text-[10px] text-indigo-300"
+                    title="Suggest a follow-up message from this option label"
+                    onClick={() => {
+                      // Store suggestion request on window for parent to handle via custom event
+                      window.dispatchEvent(
+                        new CustomEvent("nexus265-bot-suggest", {
+                          detail: { nodeId: id, optionId: opt.id, label: opt.label },
+                        })
+                      );
+                    }}
+                  >
+                    Suggest
+                  </button>
+                  <button
+                    type="button"
+                    className="text-[10px] text-red-400"
+                    onClick={() => {
+                      const options = d.options.filter((_, j) => j !== i);
+                      d.onChange?.(id, { options });
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
               {(opt.action === "next" || opt.action === "next_url") && (
                 <Handle
@@ -373,6 +394,67 @@ export default function BotTrainerPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Flowchart "Suggest" → create/fill next message from option label
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { nodeId, optionId, label } = (e as CustomEvent).detail || {};
+      if (!nodeId || !optionId) return;
+      const suggestion = suggestResponseFromOption(label || "");
+      const title = suggestTitleFromOption(label || "");
+
+      setFlowData((list) => {
+        const parent = list.find((n) => n.id === nodeId);
+        const opt = parent?.options.find((o) => o.id === optionId);
+        if (opt?.nextNodeId) {
+          setMsg("Suggested text applied to the linked message.");
+          const updated = list.map((n) =>
+            n.id === opt.nextNodeId ? { ...n, body: suggestion, title } : n
+          );
+          setTimeout(() => applyGraphFromFlowData(updated), 0);
+          return updated;
+        }
+        const id = uid("node");
+        setMsg("Created a follow-up message from this option's wording.");
+        const updated: FlowNode[] = [
+          ...list.map((n) => {
+            if (n.id !== nodeId) return n;
+            return {
+              ...n,
+              options: n.options.map((o) =>
+                o.id === optionId
+                  ? {
+                      ...o,
+                      nextNodeId: id,
+                      action:
+                        o.action === "url"
+                          ? "next_url"
+                          : o.action === "human"
+                            ? "human"
+                            : "next",
+                    }
+                  : o
+              ),
+            };
+          }),
+          {
+            id,
+            title,
+            body: suggestion,
+            isWelcome: false,
+            positionX: 200 + Math.random() * 180,
+            positionY: 220 + Math.random() * 140,
+            options: [],
+          },
+        ];
+        setTimeout(() => applyGraphFromFlowData(updated), 0);
+        return updated;
+      });
+    };
+    window.addEventListener("nexus265-bot-suggest", handler);
+    return () => window.removeEventListener("nexus265-bot-suggest", handler);
+  }, [applyGraphFromFlowData]);
+
 
   // When switching to flow, rebuild canvas from flowData + current RF positions if any
   useEffect(() => {
@@ -761,17 +843,83 @@ export default function BotTrainerPage() {
                           placeholder="/selling or https://..."
                         />
                       )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateListNode(n.id, {
-                            options: n.options.filter((_, j) => j !== i),
-                          })
-                        }
-                        className="text-xs text-red-400"
-                      >
-                        Remove option
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const suggestion = suggestResponseFromOption(opt.label);
+                            // If linked to a next node, fill that node's body; else create one
+                            if (opt.nextNodeId) {
+                              updateListNode(opt.nextNodeId, {
+                                body: suggestion,
+                                title: suggestTitleFromOption(opt.label),
+                              });
+                              setMsg("Suggested text applied to the linked message.");
+                            } else {
+                              const id = uid("node");
+                              const node: FlowNode = {
+                                id,
+                                title: suggestTitleFromOption(opt.label),
+                                body: suggestion,
+                                isWelcome: false,
+                                positionX: 120 + Math.random() * 200,
+                                positionY: 180 + Math.random() * 160,
+                                options: [],
+                              };
+                              setFlowData((list) => {
+                                const next = [...list, node];
+                                return next.map((x) => {
+                                  if (x.id !== n.id) return x;
+                                  const options = [...x.options];
+                                  options[i] = {
+                                    ...options[i],
+                                    nextNodeId: id,
+                                    action:
+                                      options[i].action === "url"
+                                        ? "next_url"
+                                        : options[i].action === "human"
+                                          ? "human"
+                                          : "next",
+                                  };
+                                  return { ...x, options };
+                                });
+                              });
+                              setNodes((nds) => [
+                                ...nds,
+                                {
+                                  id,
+                                  type: "message",
+                                  position: { x: node.positionX, y: node.positionY },
+                                  data: {
+                                    title: node.title,
+                                    body: node.body,
+                                    isWelcome: false,
+                                    options: [],
+                                    onChange: patchNode,
+                                    onDelete: deleteNode,
+                                    onAddOption: addOption,
+                                  },
+                                },
+                              ]);
+                              setMsg("Created a follow-up message from this option's wording.");
+                            }
+                          }}
+                          className="text-xs px-2 py-1 rounded-lg border border-primary/40 text-indigo-200 hover:bg-primary/15"
+                        >
+                          Suggest response
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateListNode(n.id, {
+                              options: n.options.filter((_, j) => j !== i),
+                            })
+                          }
+                          className="text-xs text-red-400"
+                        >
+                          Remove option
+                        </button>
+                      </div>
                     </div>
                   ))}
                   <button
