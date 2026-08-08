@@ -37,6 +37,23 @@ export function ChatWidget() {
       .then((r) => (r.ok ? r.json() : []))
       .then((d) => setFaqs(Array.isArray(d) ? d : []))
       .catch(() => {});
+
+    const openHandler = () => {
+      setOpen(true);
+      setMessages((m) =>
+        m.length
+          ? m
+          : [
+              {
+                id: "welcome",
+                sender: "bot",
+                body: "Hi! Welcome to nexus265. How can I help you today? Pick an option below, or type your question.",
+              },
+            ]
+      );
+    };
+    window.addEventListener("nexus265-open-chat", openHandler);
+    return () => window.removeEventListener("nexus265-open-chat", openHandler);
   }, []);
 
   useEffect(() => {
@@ -101,6 +118,21 @@ export function ChatWidget() {
   const connectHuman = async (prefill?: string) => {
     setBusy(true);
     try {
+      let presenceNote = "";
+      try {
+        const pr = await fetch("/api/chat/presence");
+        if (pr.ok) {
+          const p = await pr.json();
+          if (p.busy) {
+            presenceNote =
+              "The agent is currently assisting other customers and will get to you shortly after.";
+          } else if (!p.online) {
+            presenceNote =
+              "The agent is offline right now — leave a message and they'll be notified.";
+          }
+        }
+      } catch { /* ignore */ }
+
       const res = await fetch("/api/chat/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -114,7 +146,9 @@ export function ChatWidget() {
         setSessionId(data.id);
         setHumanMode(true);
         pushBot(
-          "You're connected to the developer queue. Type your message — they'll reply as soon as they can."
+          presenceNote
+            ? presenceNote + " Type your message below."
+            : "You're connected to the developer queue. Type your message — they'll reply as soon as they can."
         );
       } else {
         pushBot(

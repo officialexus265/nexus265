@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { Providers } from "@/components/Providers";
 import { FaviconUpdater } from "@/components/FaviconUpdater";
 import { ChatWidget } from "@/components/ChatWidget";
+import { PwaRegister } from "@/components/PwaRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,13 @@ export const metadata: Metadata = {
   title: "nexus265 | where ideas connect.",
   description: "Portfolio, marketplace and command center — where ideas connect.",
   keywords: ["portfolio", "websites", "web development", "projects for sale", "hire developer"],
+  manifest: "/manifest.webmanifest",
+  themeColor: "#6366f1",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "nexus265",
+  },
 };
 
 export default function RootLayout({
@@ -41,6 +49,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers>
+          <PwaRegister />
           <FaviconUpdater />
           <ChatWidget />
           <Navbar />

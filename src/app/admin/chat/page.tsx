@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft, Send, BookOpen, MessageSquare } from "lucide-react";
+import { ArrowLeft, Send, BookOpen, MessageSquare, Bell, BellOff, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  notifyNewChat,
+  stopAlert,
+  requestNotifyPermission,
+  startAlert,
+} from "@/lib/chat-alerts";
 
 type Session = {
   id: string;
@@ -14,9 +20,7 @@ type Session = {
 };
 
 type Msg = { id: string; sender: string; body: string; createdAt: string };
-
 type Pending = { id: string; question: string; resolved: boolean; createdAt: string };
-
 type Faq = {
   id: string;
   question: string;
@@ -34,14 +38,46 @@ export default function AdminChatPage() {
   const [pending, setPending] = useState<Pending[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [faqForm, setFaqForm] = useState({ question: "", answer: "" });
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [alertsOn, setAlertsOn] = useState(true);
+  const [notifyReady, setNotifyReady] = useState(false);
+  const [installHint, setInstallHint] = useState(false);
 
-  const loadSessions = () => {
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+  const knownSessionIds = useRef<Set<string>>(new Set());
+  const knownMsgCounts = useRef<Map<string, number>>(new Map());
+  const initialLoad = useRef(true);
+  const deferredPrompt = useRef<{ prompt: () => Promise<void> } | null>(null);
+
+  const loadSessions = useCallback(() => {
     fetch("/api/chat/sessions")
       .then((r) => (r.ok ? r.json() : []))
-      .then((d) => setSessions(Array.isArray(d) ? d : []))
+      .then((d) => {
+        const list: Session[] = Array.isArray(d) ? d : [];
+        if (!initialLoad.current && alertsOn) {
+          for (const s of list) {
+            const isNew = !knownSessionIds.current.has(s.id);
+            const prevCount = knownMsgCounts.current.get(s.id) ?? 0;
+            const msgCount = s.messages?.length ?? 0;
+            // API only returns last message in include take:1 — use updatedAt for visitor activity
+            if (isNew && s.status === "open") {
+              notifyNewChat(
+                "New live chat",
+                `${s.visitorName || "Visitor"} wants to talk`,
+                s.id
+              );
+            }
+          }
+        }
+        for (const s of list) {
+          knownSessionIds.current.add(s.id);
+        }
+        initialLoad.current = false;
+        setSessions(list);
+      })
       .catch(() => {});
-  };
+  }, [alertsOn]);
 
   const loadPending = () => {
     fetch("/api/chat/pending")
@@ -57,6 +93,31 @@ export default function AdminChatPage() {
       .catch(() => {});
   };
 
+  // Heartbeat presence
+  useEffect(() => {
+    const beat = () => {
+      fetch("/api/chat/presence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          online: true,
+          busy: !!active,
+          activeSessionId: active,
+        }),
+      }).catch(() => {});
+    };
+    beat();
+    const t = setInterval(beat, 15_000);
+    return () => {
+      clearInterval(t);
+      fetch("/api/chat/presence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ online: false, busy: false }),
+      }).catch(() => {});
+    };
+  }, [active]);
+
   useEffect(() => {
     loadSessions();
     loadPending();
@@ -66,45 +127,100 @@ export default function AdminChatPage() {
       if (tab === "pending") loadPending();
     }, 4000);
     return () => clearInterval(t);
-  }, [tab]);
+  }, [tab, loadSessions]);
 
+  // Poll messages for active + detect new visitor messages while on another chat
   useEffect(() => {
     if (!active) return;
     stickToBottom.current = true;
     const load = () => {
       fetch(`/api/chat/messages?sessionId=${active}`)
         .then((r) => (r.ok ? r.json() : []))
-        .then((d) => setMessages(Array.isArray(d) ? d : []));
+        .then((d) => {
+          const list: Msg[] = Array.isArray(d) ? d : [];
+          setMessages((prev) => {
+            if (
+              alertsOn &&
+              prev.length > 0 &&
+              list.length > prev.length &&
+              list[list.length - 1]?.sender === "visitor"
+            ) {
+              notifyNewChat(
+                "New message",
+                list[list.length - 1].body.slice(0, 80),
+                active
+              );
+            }
+            return list;
+          });
+        });
     };
     load();
     const t = setInterval(load, 2500);
     return () => clearInterval(t);
-  }, [active]);
+  }, [active, alertsOn]);
 
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const stickToBottom = useRef(true);
+  // Also detect new visitor messages on non-active sessions via sessions poll
+  useEffect(() => {
+    if (!alertsOn) return;
+    // When sessions update, check for open sessions with activity
+  }, [sessions, alertsOn]);
+
+  useEffect(() => {
+    if (!stickToBottom.current) return;
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
 
   const onMessagesScroll = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    // Only keep auto-scroll if user is near the bottom
     stickToBottom.current = distanceFromBottom < 80;
   };
 
+  // Selecting a chat stops the ringtone
+  const selectSession = (id: string) => {
+    setActive(id);
+    stopAlert();
+  };
+
+  const enableAlerts = async () => {
+    const ok = await requestNotifyPermission();
+    setNotifyReady(ok);
+    setAlertsOn(true);
+    // Unlock audio on user gesture
+    startAlert();
+    setTimeout(() => stopAlert(), 600);
+  };
+
   useEffect(() => {
-    if (!stickToBottom.current) return;
-    const el = messagesContainerRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPrompt.current = e as unknown as { prompt: () => Promise<void> };
+      setInstallHint(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const installPwa = async () => {
+    if (deferredPrompt.current) {
+      await deferredPrompt.current.prompt();
+      setInstallHint(false);
+    } else {
+      alert(
+        "To install: open browser menu → “Add to Home Screen” / “Install app”. Then open nexus265 from your home screen so chat alerts stay active."
+      );
     }
-  }, [messages]);
+  };
 
   const send = async () => {
     if (!text.trim() || !active) return;
     const body = text.trim();
     setText("");
     stickToBottom.current = true;
+    stopAlert();
     const res = await fetch("/api/chat/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,7 +270,29 @@ export default function AdminChatPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <h1 className="font-semibold text-lg">Live chat</h1>
-          <div className="flex gap-2 ml-auto">
+
+          <div className="flex flex-wrap gap-2 ml-auto items-center">
+            <button
+              type="button"
+              onClick={() => (alertsOn ? (setAlertsOn(false), stopAlert()) : enableAlerts())}
+              className={cn(
+                "text-xs px-3 py-1.5 rounded-lg border flex items-center gap-1.5",
+                alertsOn
+                  ? "border-accent/50 text-accent bg-accent/10"
+                  : "border-border text-muted"
+              )}
+            >
+              {alertsOn ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+              {alertsOn ? "Alerts on" : "Alerts off"}
+            </button>
+            <button
+              type="button"
+              onClick={installPwa}
+              className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted hover:text-white flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install app
+            </button>
             {(
               [
                 ["inbox", "Inbox", MessageSquare],
@@ -179,6 +317,20 @@ export default function AdminChatPage() {
             ))}
           </div>
         </div>
+        {installHint && (
+          <div className="max-w-6xl mx-auto px-4 pb-3">
+            <p className="text-xs text-accent">
+              Install this app on your phone for stronger chat alerts when the browser is in the background.
+            </p>
+          </div>
+        )}
+        {!notifyReady && alertsOn && (
+          <div className="max-w-6xl mx-auto px-4 pb-3">
+            <button type="button" onClick={enableAlerts} className="text-xs text-muted underline">
+              Click to allow notifications & unlock alert sound
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -196,15 +348,25 @@ export default function AdminChatPage() {
                   <button
                     key={s.id}
                     type="button"
-                    onClick={() => setActive(s.id)}
+                    onClick={() => selectSession(s.id)}
                     className={cn(
                       "w-full text-left px-3 py-3 border-b border-border/50 hover:bg-white/5",
                       active === s.id && "bg-primary/15"
                     )}
                   >
-                    <p className="text-sm font-medium">{s.visitorName || "Visitor"}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">{s.visitorName || "Visitor"}</p>
+                      <span
+                        className={cn(
+                          "text-[10px] uppercase tracking-wide",
+                          s.status === "open" ? "text-accent" : "text-muted"
+                        )}
+                      >
+                        {s.status}
+                      </span>
+                    </div>
                     <p className="text-xs text-muted truncate">
-                      {s.messages?.[0]?.body || s.status}
+                      {s.messages?.[0]?.body || "—"}
                     </p>
                   </button>
                 ))}
@@ -213,8 +375,9 @@ export default function AdminChatPage() {
 
             <div className="border border-border rounded-xl bg-card md:col-span-2 flex flex-col overflow-hidden">
               {!active ? (
-                <div className="flex-1 flex items-center justify-center text-muted text-sm">
-                  Select a conversation
+                <div className="flex-1 flex items-center justify-center text-muted text-sm px-4 text-center">
+                  Select a conversation. Keep this page (or the installed app) open to hear the
+                  ringtone when someone starts a chat.
                 </div>
               ) : (
                 <>

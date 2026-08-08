@@ -112,12 +112,13 @@ export function WebsiteCard({ site, index = 0, showPrice = false }: WebsiteCardP
                 View Demo
               </a>
             ) : site.isForSale ? (
-              <Link
-                href={`/contact?project=${encodeURIComponent(site.title)}#hire`}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event("nexus265-open-chat"))}
                 className="btn-outline text-xs py-2.5 px-3 justify-center w-full"
               >
                 Talk to Developer
-              </Link>
+              </button>
             ) : (
               <Link
                 href="/contact#hire"
@@ -131,12 +132,13 @@ export function WebsiteCard({ site, index = 0, showPrice = false }: WebsiteCardP
           {(site.demoUrl || site.isForSale) && (
             <div className="grid grid-cols-2 gap-2">
               {site.demoUrl && site.isForSale && (
-                <Link
-                  href={`/contact?project=${encodeURIComponent(site.title)}#hire`}
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event("nexus265-open-chat"))}
                   className="btn-outline text-xs py-2.5 px-3 justify-center w-full"
                 >
                   Talk to Developer
-                </Link>
+                </button>
               )}
               <Link
                 href="/contact#hire"
