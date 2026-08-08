@@ -127,7 +127,7 @@ export default function AdminSettingsPage() {
   }, [router]);
 
   useEffect(() => {
-    setForm(settings);
+    setForm({ ...defaultSettings, ...settings });
   }, [settings]);
 
   const handleSave = () => {

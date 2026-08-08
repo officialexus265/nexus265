@@ -72,8 +72,10 @@ function uid(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function MessageNode({ id, data, selected }: NodeProps) {
-  const d = data as BotNodeData;
+type MessageFlowNode = Node<BotNodeData, "message">;
+
+function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
+  const d = data;
   return (
     <div
       className={cn(
@@ -232,7 +234,7 @@ const nodeTypes = { message: MessageNode };
 export default function BotTrainerPage() {
   const [mode, setMode] = useState<EditorMode>("list");
   const [flowData, setFlowData] = useState<FlowNode[]>([]);
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<MessageFlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -314,7 +316,7 @@ export default function BotTrainerPage() {
   );
 
   const bindHandlers = useCallback(
-    (list: Node[]) =>
+    (list: MessageFlowNode[]) =>
       list.map((n) => ({
         ...n,
         data: {
@@ -329,7 +331,7 @@ export default function BotTrainerPage() {
 
   const applyGraphFromFlowData = useCallback(
     (dataNodes: FlowNode[]) => {
-      const graphNodes: Node[] = dataNodes.map((n) => ({
+      const graphNodes: MessageFlowNode[] = dataNodes.map((n) => ({
         id: n.id,
         type: "message",
         position: { x: n.positionX || 0, y: n.positionY || 0 },
