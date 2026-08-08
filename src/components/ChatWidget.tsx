@@ -18,6 +18,7 @@ type Faq = {
   question: string;
   answer: string;
   options?: FaqOption[] | null;
+  isActive?: boolean;
 };
 
 export function ChatWidget() {
@@ -63,8 +64,10 @@ export function ChatWidget() {
   }, [sessionId, humanMode, open]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!open) return;
+    // Only scroll inside the chat messages container, not the page
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [messages, open]);
 
   const pushBot = (body: string) => {
     setMessages((m) => [

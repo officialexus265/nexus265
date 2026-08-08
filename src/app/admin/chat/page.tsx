@@ -70,6 +70,7 @@ export default function AdminChatPage() {
 
   useEffect(() => {
     if (!active) return;
+    stickToBottom.current = true;
     const load = () => {
       fetch(`/api/chat/messages?sessionId=${active}`)
         .then((r) => (r.ok ? r.json() : []))
@@ -80,14 +81,30 @@ export default function AdminChatPage() {
     return () => clearInterval(t);
   }, [active]);
 
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const stickToBottom = useRef(true);
+
+  const onMessagesScroll = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // Only keep auto-scroll if user is near the bottom
+    stickToBottom.current = distanceFromBottom < 80;
+  };
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!stickToBottom.current) return;
+    const el = messagesContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages]);
 
   const send = async () => {
     if (!text.trim() || !active) return;
     const body = text.trim();
     setText("");
+    stickToBottom.current = true;
     const res = await fetch("/api/chat/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -201,7 +218,11 @@ export default function AdminChatPage() {
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  <div
+                    ref={messagesContainerRef}
+                    onScroll={onMessagesScroll}
+                    className="flex-1 overflow-y-auto p-4 space-y-2"
+                  >
                     {messages.map((m) => (
                       <div
                         key={m.id}
