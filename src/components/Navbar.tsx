@@ -63,7 +63,7 @@ export function Navbar() {
                 {name.slice(0, 2).toUpperCase()}
               </div>
             )}
-            <span className="font-[family-name:var(--font-display)] font-semibold text-lg tracking-tight hidden sm:block">
+            <span className="font-[family-name:var(--font-display)] font-semibold text-base sm:text-lg tracking-tight max-w-[40vw] sm:max-w-none truncate">
               {name}
             </span>
           </Link>

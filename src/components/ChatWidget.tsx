@@ -315,7 +315,7 @@ export function ChatWidget() {
         <button
           type="button"
           onClick={openChat}
-          className="fixed bottom-6 right-6 z-40 group flex items-center gap-0 rounded-full shadow-2xl shadow-indigo-500/25 border border-white/10 bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 text-white transition-all duration-300 hover:scale-[1.03] hover:shadow-indigo-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-40 group flex items-center gap-0 rounded-full shadow-2xl shadow-indigo-500/25 border border-white/10 bg-gradient-to-br from-indigo-500 via-indigo-600 to-cyan-500 text-white transition-all duration-300 hover:scale-[1.03] hover:shadow-indigo-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label={`Chat with ${agentName}`}
         >
           <span className="relative flex h-14 w-14 items-center justify-center">
@@ -338,7 +338,7 @@ export function ChatWidget() {
       )}
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[min(100vw-2rem,380px)] h-[520px] max-h-[75vh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+        <div className="fixed bottom-20 sm:bottom-24 left-3 right-3 sm:left-auto sm:right-6 z-50 w-auto sm:w-[min(100vw-2rem,380px)] h-[min(520px,70dvh)] max-h-[75dvh] flex flex-col rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/10">
             <div>
               <div className="flex items-center gap-2.5">

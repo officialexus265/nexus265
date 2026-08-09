@@ -20,7 +20,7 @@ export function WebsiteCard({ site, index = 0, showPrice = false }: WebsiteCardP
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
-      className="group relative bg-card border border-border rounded-2xl overflow-hidden card-lift"
+      className="group relative bg-card border border-border rounded-2xl overflow-hidden card-lift min-w-0"
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-border">

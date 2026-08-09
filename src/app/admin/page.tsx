@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -40,6 +40,7 @@ const emptyForm: Omit<Website, "id" | "createdAt" | "updatedAt"> = {
 
 export default function AdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [authorized, setAuthorized] = useState(false);
   const [websites, setWebsites] = useState<Website[]>([]);
   const [editing, setEditing] = useState<Website | null>(null);
@@ -140,6 +141,13 @@ export default function AdminPage() {
     setTagInput("");
   };
 
+  useEffect(() => {
+    if (searchParams.get("new") === "1" || searchParams.get("new") === "true") {
+      openNew();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const openEdit = (site: Website) => {
     setIsNew(false);
     setEditing(site);
@@ -224,7 +232,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       {/* Admin toolbar */}
       <div className="border-b border-border bg-card/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="font-[family-name:var(--font-display)] text-xl font-bold flex items-center gap-2">
               <Lock className="w-5 h-5 text-accent" />
@@ -234,20 +242,20 @@ export default function AdminPage() {
               Manage listings & private notes
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/admin/bot" className="btn-outline text-sm py-2 px-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/admin/bot" className="btn-outline text-xs sm:text-sm py-2 px-3">
               Train bot
             </Link>
-            <Link href="/admin/chat" className="btn-outline text-sm py-2 px-4">
+            <Link href="/admin/chat" className="btn-outline text-xs sm:text-sm py-2 px-3">
               Chat
             </Link>
-            <Link href="/admin/settings" className="btn-outline text-sm py-2 px-4">
+            <Link href="/admin/settings" className="btn-outline text-xs sm:text-sm py-2 px-3">
               <Settings className="w-4 h-4" />
-              Settings
+              <span className="hidden xs:inline sm:inline">Settings</span>
             </Link>
-            <button onClick={openNew} className="btn-primary text-sm py-2 px-4">
+            <button onClick={openNew} className="btn-primary text-xs sm:text-sm py-2 px-3">
               <Plus className="w-4 h-4" />
-              Add Website
+              Add
             </button>
           </div>
         </div>
@@ -367,7 +375,7 @@ export default function AdminPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-20 bg-black/70 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 z-50 flex items-stretch sm:items-start justify-center p-0 sm:p-4 sm:pt-16 bg-black/70 backdrop-blur-sm overflow-y-auto"
             onClick={closeModal}
           >
             <motion.div
@@ -375,7 +383,7 @@ export default function AdminPage() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-2xl my-8"
+              className="w-full max-w-2xl bg-card border border-border sm:rounded-2xl shadow-2xl my-0 sm:my-8 min-h-full sm:min-h-0 flex flex-col"
             >
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <h2 className="font-semibold text-lg">
@@ -389,7 +397,7 @@ export default function AdminPage() {
                 </button>
               </div>
 
-              <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+              <div className="p-4 sm:p-5 space-y-5 flex-1 overflow-y-auto max-h-[calc(100dvh-8rem)] sm:max-h-[70vh]">
                 {/* Public fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">

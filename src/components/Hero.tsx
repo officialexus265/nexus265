@@ -36,7 +36,7 @@ function SlideContent({ slide, active }: { slide: HeroSlide; active: boolean }) 
             </div>
           )}
 
-          <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] tracking-tight text-left">
+          <h1 className="font-[family-name:var(--font-display)] text-3xl sm:text-5xl md:text-6xl font-bold leading-[1.15] tracking-tight text-left">
             <span className="text-white">{slide.title}</span>{" "}
             <span className="gradient-text">{slide.highlight}</span>
           </h1>

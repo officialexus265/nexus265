@@ -222,7 +222,7 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28">
         <div className="flex flex-wrap gap-1 p-1 mb-6 rounded-2xl bg-card border border-border">
           {(
             [

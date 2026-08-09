@@ -318,14 +318,14 @@ export default function AdminChatPage() {
           </div>
         </div>
         {installHint && (
-          <div className="max-w-6xl mx-auto px-4 pb-3">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 pb-3">
             <p className="text-xs text-accent">
               Install this app on your phone for stronger chat alerts when the browser is in the background.
             </p>
           </div>
         )}
         {!notifyReady && alertsOn && (
-          <div className="max-w-6xl mx-auto px-4 pb-3">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4 pb-3">
             <button type="button" onClick={enableAlerts} className="text-xs text-muted underline">
               Click to allow notifications & unlock alert sound
             </button>
@@ -335,8 +335,8 @@ export default function AdminChatPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {tab === "inbox" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-10rem)]">
-            <div className="border border-border rounded-xl overflow-hidden bg-card flex flex-col">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 min-h-[70vh] md:h-[calc(100dvh-10rem)]">
+            <div className="border border-border rounded-xl overflow-hidden bg-card flex flex-col max-h-[40vh] md:max-h-none">
               <div className="px-3 py-2 border-b border-border text-sm font-medium">
                 Conversations
               </div>
@@ -373,7 +373,7 @@ export default function AdminChatPage() {
               </div>
             </div>
 
-            <div className="border border-border rounded-xl bg-card md:col-span-2 flex flex-col overflow-hidden">
+            <div className="border border-border rounded-xl bg-card md:col-span-2 flex flex-col overflow-hidden min-h-[50vh] md:min-h-0">
               {!active ? (
                 <div className="flex-1 flex items-center justify-center text-muted text-sm px-4 text-center">
                   Select a conversation. Keep this page (or the installed app) open to hear the
