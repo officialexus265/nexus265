@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -40,7 +40,6 @@ const emptyForm: Omit<Website, "id" | "createdAt" | "updatedAt"> = {
 
 export default function AdminPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [authorized, setAuthorized] = useState(false);
   const [websites, setWebsites] = useState<Website[]>([]);
   const [editing, setEditing] = useState<Website | null>(null);
@@ -142,11 +141,13 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (searchParams.get("new") === "1" || searchParams.get("new") === "true") {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("new") === "1" || params.get("new") === "true") {
       openNew();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, []);
 
   const openEdit = (site: Website) => {
     setIsNew(false);
@@ -251,7 +252,7 @@ export default function AdminPage() {
             </Link>
             <Link href="/admin/settings" className="btn-outline text-xs sm:text-sm py-2 px-3">
               <Settings className="w-4 h-4" />
-              <span className="hidden xs:inline sm:inline">Settings</span>
+              <span className="hidden sm:inline">Settings</span>
             </Link>
             <button onClick={openNew} className="btn-primary text-xs sm:text-sm py-2 px-3">
               <Plus className="w-4 h-4" />
