@@ -750,7 +750,6 @@ export default function BotTrainerPage() {
               nodeTypes={nodeTypes}
               fitView
               colorMode="dark"
-              connectionMode="loose"
               proOptions={{ hideAttribution: true }}
             >
               <Background gap={18} size={1} color="#ffffff10" />
