@@ -97,7 +97,6 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
       )}
       style={{ overflow: "visible" }}
     >
-      {/* TARGET handle - must have explicit id, stay inside node bounds, high z-index */}
       <Handle
         type="target"
         position={Position.Top}
@@ -239,7 +238,6 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
         </div>
       </div>
 
-      {/* SOURCE handles at bottom of node — explicit ids, high z-index, visible */}
       {connectableOptions.map((opt, i) => {
         const total = connectableOptions.length;
         const leftPct = total === 1 ? 50 : ((i + 1) / (total + 1)) * 100;
@@ -389,9 +387,10 @@ export default function BotTrainerPage() {
               source: n.id,
               target: o.nextNodeId,
               sourceHandle: o.id,
+              targetHandle: "target",
               label: o.label,
               markerEnd: { type: MarkerType.ArrowClosed },
-              style: { stroke: "#6366f1" },
+              style: { stroke: "#a5b4fc", strokeWidth: 2 },
             });
           }
         }
@@ -559,9 +558,10 @@ export default function BotTrainerPage() {
           {
             ...connection,
             sourceHandle,
+            targetHandle: connection.targetHandle || "target",
             id: `e-${sourceHandle}`,
             markerEnd: { type: MarkerType.ArrowClosed },
-            style: { stroke: "#6366f1", strokeWidth: 2 },
+            style: { stroke: "#a5b4fc", strokeWidth: 2 },
           },
           eds.filter((e) => e.sourceHandle !== sourceHandle)
         )
@@ -771,8 +771,8 @@ export default function BotTrainerPage() {
               colorMode="dark"
               proOptions={{ hideAttribution: true }}
               defaultEdgeOptions={{
-                markerEnd: { type: MarkerType.ArrowClosed },
-                style: { stroke: "#6366f1", strokeWidth: 2 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: "#a5b4fc" },
+                style: { stroke: "#a5b4fc", strokeWidth: 2 },
               }}
             >
               <Background gap={18} size={1} color="#ffffff10" />
