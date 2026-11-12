@@ -21,7 +21,7 @@ async function ensureWelcome() {
   });
 }
 
-/** Public + admin: full flow graph */
+/** Public + admin: this is a full flow graph */
 export async function GET() {
   try {
     await ensureWelcome();
