@@ -51,7 +51,8 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
-img, video, canvas, svg {
+/* Do NOT apply max-width/height:auto to all SVGs — it breaks React Flow edges */
+img, video, canvas {
   max-width: 100%;
   height: auto;
 }
@@ -125,7 +126,7 @@ p, h1, h2, h3, h4, li, span, a, label {
 /* Animated gradient border */
 @keyframes border-glow {
   0%, 100% { border-color: rgba(99, 102, 241, 0.4); }
-  50% { border-color: rgba(34, 211, 238, 0.6); }
+ pens 50% { border-color: rgba(34, 211, 238, 0.6); }
 }
 .border-glow {
   animation: border-glow 3s ease-in-out infinite;
@@ -196,4 +197,13 @@ p, h1, h2, h3, h4, li, span, a, label {
   background: linear-gradient(135deg, #67e8f9, #22d3ee);
   transform: translateY(-1px);
   box-shadow: 0 8px 20px -5px rgba(34, 211, 238, 0.4);
+}
+
+/* React Flow edges must stay visible on dark canvas */
+.react-flow__edge-path {
+  stroke: #a5b4fc !important;
+  stroke-width: 2 !important;
+}
+.react-flow__arrowhead {
+  fill: #a5b4fc !important;
 }
