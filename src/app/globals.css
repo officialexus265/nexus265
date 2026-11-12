@@ -126,7 +126,7 @@ p, h1, h2, h3, h4, li, span, a, label {
 /* Animated gradient border */
 @keyframes border-glow {
   0%, 100% { border-color: rgba(99, 102, 241, 0.4); }
- pens 50% { border-color: rgba(34, 211, 238, 0.6); }
+  50% { border-color: rgba(34, 211, 238, 0.6); }
 }
 .border-glow {
   animation: border-glow 3s ease-in-out infinite;
