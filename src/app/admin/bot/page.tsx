@@ -95,12 +95,22 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
         d.isWelcome ? "border-accent ring-1 ring-accent/40" : "border-border",
         selected && "ring-2 ring-primary"
       )}
+      style={{ overflow: "visible" }}
     >
+      {/* TARGET handle - must have explicit id, stay inside node bounds, high z-index */}
       <Handle
         type="target"
         position={Position.Top}
+        id="target"
         isConnectable={true}
-        className="!bg-primary !w-4 !h-4 !border-2 !border-background !-top-2"
+        style={{
+          background: "#6366f1",
+          width: 16,
+          height: 16,
+          border: "2px solid #0a0a12",
+          top: -8,
+          zIndex: 50,
+        }}
       />
 
       <div className="px-3 py-2 border-b border-border flex items-center justify-between gap-2">
@@ -110,7 +120,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
         {!d.isWelcome && (
           <button
             type="button"
-            className="text-muted hover:text-red-400"
+            className="nodrag text-muted hover:text-red-400"
             onClick={() => d.onDelete?.(id)}
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -123,7 +133,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
           <input
             value={d.title}
             onChange={(e) => d.onChange?.(id, { title: e.target.value })}
-            className="w-full text-xs px-2 py-1 rounded bg-background border border-border outline-none"
+            className="nodrag w-full text-xs px-2 py-1 rounded bg-background border border-border outline-none"
             placeholder="Admin title"
           />
         )}
@@ -131,7 +141,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
           value={d.body}
           onChange={(e) => d.onChange?.(id, { body: e.target.value })}
           rows={3}
-          className="w-full text-xs px-2 py-1.5 rounded bg-background border border-border outline-none resize-none"
+          className="nodrag w-full text-xs px-2 py-1.5 rounded bg-background border border-border outline-none resize-none"
           placeholder="Bot message shown to visitor..."
         />
         <div className="space-y-1.5">
@@ -148,7 +158,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
                   options[i] = { ...options[i], label: e.target.value };
                   d.onChange?.(id, { options });
                 }}
-                className="w-full text-xs px-1.5 py-1 rounded bg-card border border-border outline-none"
+                className="nodrag w-full text-xs px-1.5 py-1 rounded bg-card border border-border outline-none"
                 placeholder="Button label"
               />
               <select
@@ -161,7 +171,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
                   };
                   d.onChange?.(id, { options });
                 }}
-                className="w-full text-[11px] px-1.5 py-1 rounded bg-card border border-border outline-none"
+                className="nodrag w-full text-[11px] px-1.5 py-1 rounded bg-card border border-border outline-none"
               >
                 <option value="next">Go to next message</option>
                 <option value="url">Open website page</option>
@@ -176,7 +186,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
                     options[i] = { ...options[i], url: e.target.value };
                     d.onChange?.(id, { options });
                   }}
-                  className="w-full text-[11px] px-1.5 py-1 rounded bg-card border border-border outline-none"
+                  className="nodrag w-full text-[11px] px-1.5 py-1 rounded bg-card border border-border outline-none"
                   placeholder="/selling or /contact#hire"
                 />
               )}
@@ -193,7 +203,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    className="text-[10px] text-indigo-300"
+                    className="nodrag text-[10px] text-indigo-300"
                     title="Suggest a follow-up message from this option label"
                     onClick={() => {
                       window.dispatchEvent(
@@ -207,7 +217,7 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
                   </button>
                   <button
                     type="button"
-                    className="text-[10px] text-red-400"
+                    className="nodrag text-[10px] text-red-400"
                     onClick={() => {
                       const options = d.options.filter((_, j) => j !== i);
                       d.onChange?.(id, { options });
@@ -222,16 +232,17 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
           <button
             type="button"
             onClick={() => d.onAddOption?.(id)}
-            className="w-full text-[11px] py-1.5 rounded-lg border border-dashed border-border text-muted hover:text-white hover:border-primary/50"
+            className="nodrag w-full text-[11px] py-1.5 rounded-lg border border-dashed border-border text-muted hover:text-white hover:border-primary/50"
           >
             + Add option
           </button>
         </div>
       </div>
 
+      {/* SOURCE handles at bottom of node — explicit ids, high z-index, visible */}
       {connectableOptions.map((opt, i) => {
         const total = connectableOptions.length;
-        const left = total === 1 ? 50 : ((i + 1) / (total + 1)) * 100;
+        const leftPct = total === 1 ? 50 : ((i + 1) / (total + 1)) * 100;
         return (
           <Handle
             key={opt.id}
@@ -239,19 +250,19 @@ function MessageNode({ id, data, selected }: NodeProps<MessageFlowNode>) {
             position={Position.Bottom}
             id={opt.id}
             isConnectable={true}
-            className="!bg-accent !w-4 !h-4 !border-2 !border-background !-bottom-2"
-            style={{ left: `${left}%` }}
+            style={{
+              background: "#22d3ee",
+              width: 16,
+              height: 16,
+              border: "2px solid #0a0a12",
+              bottom: -8,
+              left: `${leftPct}%`,
+              zIndex: 50,
+            }}
             title={`Connect "${opt.label}" to another message`}
           />
         );
       })}
-
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        id="default"
-        className="!opacity-0 !pointer-events-none"
-      />
     </div>
   );
 }
@@ -550,11 +561,12 @@ export default function BotTrainerPage() {
             sourceHandle,
             id: `e-${sourceHandle}`,
             markerEnd: { type: MarkerType.ArrowClosed },
-            style: { stroke: "#6366f1" },
+            style: { stroke: "#6366f1", strokeWidth: 2 },
           },
           eds.filter((e) => e.sourceHandle !== sourceHandle)
         )
       );
+      setMsg("Connected! Remember to click Save flow.");
     },
     [setNodes, setEdges, nodes]
   );
@@ -746,11 +758,22 @@ export default function BotTrainerPage() {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
-              isValidConnection={(c) => !!c.source && !!c.target && c.source !== c.target}
+              isValidConnection={(c) =>
+                !!c.source &&
+                !!c.target &&
+                c.source !== c.target
+              }
               nodeTypes={nodeTypes}
+              nodesConnectable={true}
+              nodesDraggable={true}
+              elementsSelectable={true}
               fitView
               colorMode="dark"
               proOptions={{ hideAttribution: true }}
+              defaultEdgeOptions={{
+                markerEnd: { type: MarkerType.ArrowClosed },
+                style: { stroke: "#6366f1", strokeWidth: 2 },
+              }}
             >
               <Background gap={18} size={1} color="#ffffff10" />
               <Controls />
