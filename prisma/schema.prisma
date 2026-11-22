@@ -21,6 +21,7 @@ model Website {
   description     String
   longDescription String?
   thumbnail       String
+  galleryImages   String[] @default([])
   liveUrl         String
   demoUrl         String?
   isForSale       Boolean  @default(false)
