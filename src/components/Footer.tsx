@@ -161,7 +161,7 @@ export function Footer() {
           <p>
             © {year} {name}. All rights reserved.
           </p>
-          <p>Built with Next.js · Hosted on Vercel</p>
+          {/* <p>Built with Next.js · Hosted on Vercel</p> */}
         </div>
       </div>
     </footer>
