@@ -24,13 +24,15 @@ export function WebsiteCard({ site, index = 0, showPrice = false }: WebsiteCardP
     >
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] overflow-hidden bg-border">
-        <Image
-          src={site.thumbnail}
-          alt={site.title}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+        <Link href={`/projects/${site.id}`} aria-label={`View ${site.title} project details`} className="absolute inset-0 z-10">
+          <Image
+            src={site.thumbnail}
+            alt={site.title}
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </Link>
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
         {/* Featured badge */}
@@ -52,7 +54,7 @@ export function WebsiteCard({ site, index = 0, showPrice = false }: WebsiteCardP
       <div className="p-5 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-[family-name:var(--font-display)] font-semibold text-lg leading-tight group-hover:text-accent transition-colors">
-            {site.title}
+            <Link href={`/projects/${site.id}`}>{site.title}</Link>
           </h3>
         </div>
 

@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
         description: body.description,
         longDescription: body.longDescription || null,
         thumbnail: body.thumbnail,
+        galleryImages: Array.isArray(body.galleryImages) ? body.galleryImages.filter((url: unknown) => typeof url === "string") : [],
         liveUrl: body.liveUrl,
         demoUrl: body.demoUrl || null,
         isForSale: !!body.isForSale,
