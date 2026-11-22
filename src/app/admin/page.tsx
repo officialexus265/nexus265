@@ -15,6 +15,8 @@ import {
   EyeOff,
   Lock,
   Settings,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { mockWebsites } from "@/data/websites";
 import { Website } from "@/types";
@@ -533,20 +535,50 @@ export default function AdminPage() {
                                 <Image src={url} alt={`Gallery image ${index + 1}`} fill sizes="200px" className="object-cover" />
                               </div>
                               <div className="flex items-center justify-between gap-2 p-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setForm((prev) => ({ ...prev, thumbnail: url, galleryImages: (prev.galleryImages || []).filter((_, i) => i !== index) }))}
-                                  className="text-[11px] text-accent hover:underline"
-                                >
-                                  Set as cover
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setForm((prev) => ({ ...prev, galleryImages: (prev.galleryImages || []).filter((_, i) => i !== index) }))}
-                                  className="text-[11px] text-red-400 hover:underline"
-                                >
-                                  Remove
-                                </button>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    disabled={index === 0}
+                                    onClick={() => setForm((prev) => {
+                                      const images = [...(prev.galleryImages || [])];
+                                      [images[index - 1], images[index]] = [images[index], images[index - 1]];
+                                      return { ...prev, galleryImages: images };
+                                    })}
+                                    className="p-1 text-muted hover:text-white disabled:opacity-30"
+                                    title="Move image up"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={index === (form.galleryImages || []).length - 1}
+                                    onClick={() => setForm((prev) => {
+                                      const images = [...(prev.galleryImages || [])];
+                                      [images[index], images[index + 1]] = [images[index + 1], images[index]];
+                                      return { ...prev, galleryImages: images };
+                                    })}
+                                    className="p-1 text-muted hover:text-white disabled:opacity-30"
+                                    title="Move image down"
+                                  >
+                                    <ArrowDown className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setForm((prev) => ({ ...prev, thumbnail: url, galleryImages: (prev.galleryImages || []).filter((_, i) => i !== index) }))}
+                                    className="text-[11px] text-accent hover:underline"
+                                  >
+                                    Set as cover
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setForm((prev) => ({ ...prev, galleryImages: (prev.galleryImages || []).filter((_, i) => i !== index) }))}
+                                    className="text-[11px] text-red-400 hover:underline"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
