@@ -26,7 +26,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000).\n\nAfter pulling schema updates, apply them to the configured PostgreSQL database with `npx prisma db push` (then `npx prisma generate` if needed).
 
 ### Demo Admin Login
 
@@ -57,6 +57,7 @@ RESEND_API_KEY=...
 |-------------|--------------------------------------------------|
 | `/`         | Landing + all websites grid + Hire Me CTAs       |
 | `/selling`  | Projects for sale with prices & demo buttons     |
+| `/projects/[id]` | Dedicated public project page with screenshot gallery |
 | `/contact`  | Contact methods + form + Hire Me section         |
 | `/login`    | Fancy owner-only login                           |
 | `/admin`    | Protected dashboard (CRUD + private notes)       |
