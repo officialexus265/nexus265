@@ -28,6 +28,7 @@ const emptyForm: Omit<Website, "id" | "createdAt" | "updatedAt"> = {
   description: "",
   longDescription: "",
   thumbnail: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80",
+  galleryImages: [],
   liveUrl: "",
   demoUrl: "",
   isForSale: false,
@@ -157,6 +158,7 @@ export default function AdminPage() {
       description: site.description,
       longDescription: site.longDescription || "",
       thumbnail: site.thumbnail,
+      galleryImages: site.galleryImages || [],
       liveUrl: site.liveUrl,
       demoUrl: site.demoUrl || "",
       isForSale: site.isForSale,
@@ -484,13 +486,73 @@ export default function AdminPage() {
                       <div className="mt-2 relative w-full h-32 rounded-lg overflow-hidden bg-border">
                         <Image
                           src={form.thumbnail}
-                          alt="Preview"
+                          alt="Cover preview"
                           fill
                           className="object-cover"
                           sizes="600px"
                         />
                       </div>
                     )}
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <label className="block text-sm text-muted">Project gallery</label>
+                        <span className="text-xs text-muted">{(form.galleryImages || []).length} image(s)</span>
+                      </div>
+                      <label className="btn-outline text-sm py-2 px-3 cursor-pointer inline-flex">
+                        <Upload className="w-4 h-4" />
+                        Add gallery images
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                          multiple
+                          className="hidden"
+                          onChange={async (e) => {
+                            const files = Array.from(e.target.files || []);
+                            e.target.value = "";
+                            if (!files.length) return;
+                            try {
+                              const uploaded = await Promise.all(
+                                files.map((file) => uploadImage(file, "nexus265/project-gallery"))
+                              );
+                              setForm((prev) => ({
+                                ...prev,
+                                galleryImages: [...(prev.galleryImages || []), ...uploaded.map((item) => item.url)],
+                              }));
+                            } catch (err) {
+                              alert(err instanceof Error ? err.message : "Gallery upload failed");
+                            }
+                          }}
+                        />
+                      </label>
+                      <p className="text-xs text-muted mt-2">Select multiple screenshots at once. Use “Set as cover” to choose the main card and project-page image.</p>
+                      {(form.galleryImages || []).length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                          {(form.galleryImages || []).map((url, index) => (
+                            <div key={`${url}-${index}`} className="rounded-lg border border-border overflow-hidden bg-background">
+                              <div className="relative aspect-[4/3]">
+                                <Image src={url} alt={`Gallery image ${index + 1}`} fill sizes="200px" className="object-cover" />
+                              </div>
+                              <div className="flex items-center justify-between gap-2 p-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setForm((prev) => ({ ...prev, thumbnail: url, galleryImages: (prev.galleryImages || []).filter((_, i) => i !== index) }))}
+                                  className="text-[11px] text-accent hover:underline"
+                                >
+                                  Set as cover
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setForm((prev) => ({ ...prev, galleryImages: (prev.galleryImages || []).filter((_, i) => i !== index) }))}
+                                  className="text-[11px] text-red-400 hover:underline"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
