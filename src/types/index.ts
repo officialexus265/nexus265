@@ -4,6 +4,7 @@ export interface Website {
   description: string;
   longDescription?: string;
   thumbnail: string;
+  galleryImages?: string[];
   liveUrl: string;
   demoUrl?: string;
   isForSale: boolean;
