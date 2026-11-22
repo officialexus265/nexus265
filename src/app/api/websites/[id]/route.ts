@@ -3,6 +3,41 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const website = await prisma.website.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        longDescription: true,
+        thumbnail: true,
+        galleryImages: true,
+        liveUrl: true,
+        demoUrl: true,
+        isForSale: true,
+        oldPrice: true,
+        newPrice: true,
+        tags: true,
+        featured: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!website) return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return NextResponse.json(website);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Failed to fetch project" }, { status: 500 });
+  }
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -23,6 +58,7 @@ export async function PUT(
         description: body.description,
         longDescription: body.longDescription || null,
         thumbnail: body.thumbnail,
+        galleryImages: Array.isArray(body.galleryImages) ? body.galleryImages.filter((url: unknown) => typeof url === "string") : [],
         liveUrl: body.liveUrl,
         demoUrl: body.demoUrl || null,
         isForSale: !!body.isForSale,
